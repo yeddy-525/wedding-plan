@@ -332,6 +332,7 @@ function ld(){try{return JSON.parse(localStorage.getItem('wd'))||null}catch{retu
 let GAS_URL = localStorage.getItem('gas_url') || ''
 
 function sv(){
+  D._savedAt=Date.now()
   try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
   gasSync()
 }
@@ -343,8 +344,10 @@ function gasSync(){
   setSyncStatus('saving')
   _syncTimer=setTimeout(async()=>{
     try{
+      // no-cors: CORS preflight 없이 전송 (GAS POST 실제로 저장되도록)
       await fetch(GAS_URL,{
         method:'POST',
+        mode:'no-cors',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
         body:JSON.stringify(D)
       })
@@ -372,16 +375,27 @@ async function loadFromGAS(){
     const text=await res.text()
     const remote=JSON.parse(text)
     if(remote&&remote.vendors){
-      D=remote
-      // 마이그레이션 재적용
-      if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
-      if(!D.jwedding) D.jwedding={}
-      if(!D.expenses) D.expenses=[]
-      if(!D.tasks) D.tasks=[]
-      if(!D.tl) D.tl=[]
-      D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
-      try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
-      updDday();updNC();render()
+      const remoteTime=remote._savedAt||0
+      const localTime=D._savedAt||0
+      if(remoteTime>localTime){
+        // GAS가 더 최신 → 적용
+        D=remote
+        if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
+        if(!D.settings.jwLabels) D.settings.jwLabels=['글 1','글 2','글 3']
+        if(!D.settings.jwLinks) D.settings.jwLinks={cafe:'',points:''}
+        if(!D.jwedding) D.jwedding={}
+        if(!D.expenses) D.expenses=[]
+        if(!D.tasks) D.tasks=[]
+        if(!D.tl) D.tl=[]
+        if(!D.jwMemo) D.jwMemo=[]
+        if(!D.log) D.log=[]
+        D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
+        try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
+        updDday();updNC();render()
+      } else {
+        // 로컬이 더 최신 또는 동일 → 로컬 데이터를 GAS에 덮어쓰기
+        gasSync()
+      }
     }
     setSyncStatus('ok')
   }catch(e){
