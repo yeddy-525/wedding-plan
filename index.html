@@ -167,8 +167,11 @@ html,body{height:100%}
 .exp-amount{font-size:14px;font-weight:600;color:var(--t)}
 .exp-date{font-size:10px;color:var(--tm);margin-top:2px}
 .exp-cat-badge{font-size:10px;padding:2px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0}
-.exp-del{background:none;border:none;color:var(--tm);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;transition:color .1s;flex-shrink:0}
+.exp-del{background:none;border:none;color:var(--tm);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;transition:color .1s;flex-shrink:0;opacity:0}
 .exp-del:hover{color:var(--no)}
+.exp-edit{background:none;border:none;color:var(--tm);cursor:pointer;font-size:13px;padding:0 4px;line-height:1;transition:color .1s;flex-shrink:0;opacity:0}
+.exp-edit:hover{color:var(--a)}
+.exp-row:hover .exp-edit,.exp-row:hover .exp-del{opacity:1}
 
 /* JWEDDING */
 .jw-today{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
@@ -730,7 +733,7 @@ function rExpense(){
   }).join('')
   const rows=[...exps].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{
     const col=CAT_COLORS[e.cat]||'#4A8FE0'
-    return'<div class="exp-row"><div class="exp-cat-dot" style="background:'+col+'"></div><div class="exp-body"><div class="exp-name">'+e.name+'</div>'+(e.note?'<div class="exp-note">'+e.note+'</div>':'')+'</div><div style="text-align:right;flex-shrink:0"><div class="exp-amount">'+fp(e.amount)+'</div><div class="exp-date">'+e.date+'</div></div><span class="exp-cat-badge" style="background:'+col+'18;color:'+col+'">'+e.cat+'</span><button class="exp-del" onclick="delExpense('+e.id+')" title="삭제">×</button></div>'
+    return'<div class="exp-row"><div class="exp-cat-dot" style="background:'+col+'"></div><div class="exp-body"><div class="exp-name">'+e.name+'</div>'+(e.note?'<div class="exp-note">'+e.note+'</div>':'')+'</div><div style="text-align:right;flex-shrink:0"><div class="exp-amount">'+fp(e.amount)+'</div><div class="exp-date">'+e.date+'</div></div><span class="exp-cat-badge" style="background:'+col+'18;color:'+col+'">'+e.cat+'</span><button class="exp-edit" onclick="editExpense('+e.id+')" title="수정">✎</button><button class="exp-del" onclick="delExpense('+e.id+')" title="삭제">×</button></div>'
   }).join('')
 
   const budgetSection=budget?
@@ -1018,10 +1021,29 @@ function submitExpense(){
   sv();closeModal();document.getElementById('ps').textContent='지금까지 '+fp(totalSpent())+' 사용';render()
 }
 
+function editExpense(id){
+  const e=D.expenses.find(e=>e.id===id);if(!e)return
+  document.getElementById('mbox').innerHTML='<div class="mtit">지출 수정</div><div class="fg"><label class="fl">항목명 *</label><input class="fi" id="en" value="'+e.name+'"/></div><div class="fr"><div class="fg"><label class="fl">금액 (원) *</label><input class="fi" id="ea" type="number" value="'+e.amount+'"/></div><div class="fg"><label class="fl">날짜</label><input class="fi" id="ed" type="date" value="'+e.date+'"/></div></div><div class="fg"><label class="fl">카테고리</label><select class="fsel" id="ec">'+EXP_CATS.map(c=>'<option '+(c===e.cat?'selected':'')+'>'+c+'</option>').join('')+'</select></div><div class="fg"><label class="fl">메모</label><input class="fi" id="eno" value="'+(e.note||'')+'"/></div><div class="ma"><button class="btn danger" onclick="delExpense('+id+')">삭제</button><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitExpenseEdit('+id+')">저장</button></div>'
+  document.getElementById('modal').style.display='flex'
+}
+
+function submitExpenseEdit(id){
+  const e=D.expenses.find(e=>e.id===id);if(!e)return
+  const name=document.getElementById('en').value.trim()
+  const amt=parseInt(document.getElementById('ea').value)
+  if(!name||!amt)return
+  e.name=name;e.amount=amt
+  e.date=document.getElementById('ed').value||TODAY_STR
+  e.cat=document.getElementById('ec').value
+  e.note=document.getElementById('eno').value.trim()
+  sv();closeModal();document.getElementById('ps').textContent='지금까지 '+fp(totalSpent())+' 사용';render()
+}
+
 function delExpense(id){
   if(!confirm('이 지출 내역을 삭제할까요?'))return
-  D.expenses=D.expenses.filter(e=>e.id!==id);sv();render()
+  D.expenses=D.expenses.filter(e=>e.id!==id);sv();closeModal();render()
 }
+
 
 function ensureJwDay(){
   if(!D.jwedding[TODAY_STR]) D.jwedding[TODAY_STR]={p1:{done:false,url:''},p2:{done:false,url:''},p3:{done:false,url:''},comment:false,commentUrl:''}
