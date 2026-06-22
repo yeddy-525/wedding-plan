@@ -290,6 +290,7 @@ html,body{height:100%}
         </div>
       </div>
       <div class="has" id="has"></div>
+      <div id="sync-status" style="font-size:11px;color:var(--tm);white-space:nowrap;padding-left:8px"></div>
     </div>
     <div class="pc" id="con"></div>
   </div>
@@ -322,7 +323,90 @@ function fp(n){
 }
 
 function ld(){try{return JSON.parse(localStorage.getItem('wd'))||null}catch{return null}}
-function sv(){try{localStorage.setItem('wd',JSON.stringify(D))}catch{}}
+
+// GAS URL은 기기별 설정 (공유 데이터에 포함 안 됨)
+let GAS_URL = localStorage.getItem('gas_url') || ''
+
+function sv(){
+  try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
+  gasSync()
+}
+
+let _syncTimer=null
+function gasSync(){
+  if(!GAS_URL) return
+  clearTimeout(_syncTimer)
+  setSyncStatus('saving')
+  _syncTimer=setTimeout(async()=>{
+    try{
+      await fetch(GAS_URL,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify(D)
+      })
+      setSyncStatus('ok')
+    }catch(e){
+      setSyncStatus('error')
+      console.warn('GAS 저장 실패',e)
+    }
+  },1200)
+}
+
+function setSyncStatus(s){
+  const el=document.getElementById('sync-status');if(!el)return
+  const m={ok:'✓ 동기화됨',saving:'동기화 중…',error:'⚠ 오프라인',loading:'불러오는 중…'}
+  const c={ok:'var(--ok)',saving:'var(--tm)',error:'var(--no)',loading:'var(--tm)'}
+  el.textContent=m[s]||''
+  el.style.color=c[s]||'var(--tm)'
+}
+
+async function loadFromGAS(){
+  if(!GAS_URL){setSyncStatus('');return}
+  setSyncStatus('loading')
+  try{
+    const res=await fetch(GAS_URL+'?t='+Date.now())
+    const text=await res.text()
+    const remote=JSON.parse(text)
+    if(remote&&remote._v!==undefined){
+      D=remote
+      // 마이그레이션 재적용
+      if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
+      if(!D.jwedding) D.jwedding={}
+      if(!D.expenses) D.expenses=[]
+      if(!D.tasks) D.tasks=[]
+      if(!D.tl) D.tl=[]
+      D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
+      try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
+      updDday();updNC();render()
+    }
+    setSyncStatus('ok')
+  }catch(e){
+    setSyncStatus('error')
+    console.warn('GAS 로드 실패',e)
+  }
+}
+
+async function testGAS(){
+  const url=document.getElementById('set-gas-url').value.trim()
+  if(!url){alert('URL을 먼저 입력해주세요.');return}
+  const btn=document.getElementById('test-btn')
+  btn.textContent='테스트 중…';btn.disabled=true
+  try{
+    const res=await fetch(url+'?t='+Date.now())
+    const text=await res.text()
+    JSON.parse(text) // 파싱 가능하면 성공
+    btn.textContent='연결됨 ✓'
+    btn.style.color='var(--ok)'
+    btn.style.borderColor='var(--ok)'
+  }catch(e){
+    btn.textContent='연결 실패'
+    btn.style.color='var(--no)'
+    btn.style.borderColor='var(--no)'
+    console.warn(e)
+  }
+  btn.disabled=false
+  setTimeout(()=>{btn.textContent='연결 테스트';btn.style.color='';btn.style.borderColor=''},3000)
+}
 
 let D = ld() || {
   vendors:{
@@ -673,7 +757,27 @@ function rJwedding(){
 }
 
 function rSettings(){
-  return'<div class="set-section"><div class="set-title">기본 정보</div><div class="set-row"><div><div class="set-row-label">결혼 예정일</div><div class="set-row-desc">D-day 계산 및 타임라인 하이라이트에 사용돼요</div></div><input class="set-input" type="date" id="set-date" value="'+D.settings.weddingDate+'"/></div></div><div class="set-section"><div class="set-title">예산</div><div class="set-row"><div><div class="set-row-label">총 예산 상한선</div><div class="set-row-desc">지출 페이지에서 남은 예산을 보여줘요</div></div><input class="set-input" type="number" id="set-budget" value="'+D.settings.budget+'" placeholder="30000000"/></div></div><div style="margin-top:8px;font-size:12px;color:var(--tm)">변경 후 우측 상단 저장 버튼을 눌러주세요.</div>'
+  const syncStatus=GAS_URL
+    ?'<span style="color:var(--ok);font-size:11px">✓ 연동됨</span>'
+    :'<span style="color:var(--tm);font-size:11px">미설정</span>'
+  return`<div class="set-section"><div class="set-title">기본 정보</div><div class="set-row"><div><div class="set-row-label">결혼 예정일</div><div class="set-row-desc">D-day 계산 및 타임라인 하이라이트에 사용돼요</div></div><input class="set-input" type="date" id="set-date" value="${D.settings.weddingDate}"/></div></div>
+  <div class="set-section"><div class="set-title">예산</div><div class="set-row"><div><div class="set-row-label">총 예산 상한선</div><div class="set-row-desc">지출 페이지에서 남은 예산을 보여줘요</div></div><input class="set-input" type="number" id="set-budget" value="${D.settings.budget}" placeholder="30000000"/></div></div>
+  <div class="set-section"><div class="set-title" style="display:flex;align-items:center;gap:8px">구글 시트 연동 ${syncStatus}</div>
+    <div class="set-row" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div><div class="set-row-label">GAS 웹 앱 URL</div><div class="set-row-desc">구글 앱스 스크립트에서 배포한 웹 앱 URL을 입력하세요 — 두 기기 모두 입력해야 공유돼요</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="set-input" id="set-gas-url" style="width:100%;text-align:left;font-size:11px" placeholder="https://script.google.com/macros/s/..." value="${GAS_URL}"/>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn sm" id="test-btn" onclick="testGAS()">연결 테스트</button>
+        <button class="btn sm" onclick="loadFromGAS()">지금 불러오기</button>
+      </div>
+      <div style="font-size:11px;color:var(--tm);line-height:1.6">
+        설정 방법: <strong>구글 시트</strong> 열기 → 확장 프로그램 → <strong>Apps Script</strong> → Code.gs 내용 붙여넣기 → 배포 → 새 배포 → 웹 앱 → 저장 후 URL 복사
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:12px;color:var(--tm)">변경 후 우측 상단 저장 버튼을 눌러주세요.</div>`
 }
 
 // --- 액션들 ---
@@ -834,7 +938,12 @@ function calMove(dir){
 function saveSettings(){
   D.settings.weddingDate=document.getElementById('set-date').value
   D.settings.budget=parseInt(document.getElementById('set-budget').value)||0
-  sv();updDday();alert('저장됐어요!')
+  const newUrl=document.getElementById('set-gas-url').value.trim()
+  if(newUrl!==GAS_URL){
+    GAS_URL=newUrl
+    localStorage.setItem('gas_url',GAS_URL)
+  }
+  sv();updDday();alert('저장됐어요!'+(GAS_URL?'\n구글 시트에도 동기화 중이에요.':''))
 }
 
 function closeModal(){document.getElementById('modal').style.display='none'}
@@ -849,4 +958,5 @@ function closeSidebar(){
 }
 
 updNC();render()
+loadFromGAS()
 </script>
