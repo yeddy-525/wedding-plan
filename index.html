@@ -371,7 +371,7 @@ async function loadFromGAS(){
     const res=await fetch(GAS_URL+'?t='+Date.now())
     const text=await res.text()
     const remote=JSON.parse(text)
-    if(remote&&remote._v!==undefined){
+    if(remote&&remote.vendors){
       D=remote
       // 마이그레이션 재적용
       if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
