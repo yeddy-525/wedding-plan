@@ -149,7 +149,7 @@ html,body{height:100%}
 .fl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--tm);margin-bottom:5px}
 .fi,.fsel{width:100%;padding:8px 11px;background:var(--g);border:1px solid var(--b);border-radius:7px;color:var(--t);font-size:12px;font-family:inherit;outline:none;transition:border-color .12s}
 .fi:focus,.fsel:focus{border-color:var(--a)}
-.fsel option{background:#241929}
+.fsel option{background:#fff;color:var(--t)}
 .ma{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 
 /* SEC TABS */
@@ -173,6 +173,49 @@ html,body{height:100%}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
 
+/* JWEDDING */
+.jw-today{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.jw-card{background:var(--s);border:2px solid var(--b);border-radius:12px;padding:18px;transition:all .15s}
+.jw-card.done{border-color:var(--a);background:rgba(74,143,224,.05)}
+.jw-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.jw-card-label{font-size:13px;font-weight:600}
+.jw-toggle{width:36px;height:20px;border-radius:10px;background:var(--s2);cursor:pointer;position:relative;transition:background .15s;border:none;flex-shrink:0}
+.jw-toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.jw-card.done .jw-toggle{background:var(--a)}
+.jw-card.done .jw-toggle::after{left:19px}
+.jw-url-input{width:100%;padding:7px 10px;background:var(--g);border:1px solid var(--b);border-radius:7px;color:var(--t);font-size:12px;font-family:inherit;outline:none;margin-top:8px;transition:border-color .12s}
+.jw-url-input:focus{border-color:var(--a)}
+.jw-url-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--a);text-decoration:none;margin-top:6px}
+.jw-url-link:hover{text-decoration:underline}
+
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav-btn{background:none;border:1px solid var(--b);border-radius:7px;padding:4px 12px;cursor:pointer;color:var(--tm);font-size:13px;transition:all .12s}
+.cal-nav-btn:hover{border-color:var(--a);color:var(--a)}
+.cal-month-label{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:16px}
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.cal-head-day{text-align:center;font-size:10px;color:var(--tm);padding:4px 0;text-transform:uppercase}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;border:1px solid transparent;position:relative}
+.cal-cell.has-data{cursor:pointer}
+.cal-cell.today{border-color:var(--a);font-weight:700;color:var(--a)}
+.cal-cell.both{background:var(--a);color:#fff;border-color:var(--a)}
+.cal-cell.both.today{background:var(--a)}
+.cal-cell.post-only{background:rgba(74,143,224,.15);color:var(--a)}
+.cal-cell.comment-only{background:rgba(74,143,224,.08);color:var(--tm)}
+.cal-cell.other-month{opacity:.25}
+.cal-dots{display:flex;gap:3px;margin-top:2px}
+.cal-dot{width:4px;height:4px;border-radius:50%;background:currentColor}
+
+/* SETTINGS */
+.set-section{margin-bottom:24px}
+.set-title{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);margin-bottom:12px}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--s);border:1px solid var(--b);border-radius:10px;margin-bottom:6px;gap:16px}
+.set-row-label{font-size:13px;flex:1}
+.set-row-desc{font-size:11px;color:var(--tm);margin-top:2px}
+.set-input{padding:7px 11px;background:var(--g);border:1px solid var(--b);border-radius:7px;color:var(--t);font-size:13px;font-family:inherit;outline:none;transition:border-color .12s;width:180px;text-align:right}
+.set-input:focus{border-color:var(--a)}
+
 @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .pc{animation:fi .15s ease}
 @media(prefers-reduced-motion:reduce){.pc{animation:none}.vc,.ni,.btn,.chip,.tlt,.ti{transition:none}}
@@ -184,7 +227,7 @@ html,body{height:100%}
       <div class="brand-name">✦ 우리의 결혼준비</div>
       <div class="brand-couple">YJ &amp; JE</div>
       <div class="brand-dday" id="dday">D-237</div>
-      <div class="brand-date">2027년 2월 14일</div>
+      <div class="brand-date" id="brand-date">2027년 2월 14일</div>
     </div>
     <nav class="nav" id="nav">
       <div class="ni on" onclick="go('dashboard')" data-p="dashboard"><span class="ni-ico">◈</span>대시보드</div>
@@ -194,7 +237,10 @@ html,body{height:100%}
       <div class="ni" onclick="go('dress')" data-p="dress"><span class="ni-ico">♡</span>드레스<span class="nc" id="nc-dress">2</span></div>
       <div class="ndiv"></div>
       <div class="ni" onclick="go('expense')" data-p="expense"><span class="ni-ico">₩</span>지출 관리</div>
+      <div class="ni" onclick="go('jwedding')" data-p="jwedding"><span class="ni-ico">✎</span>제이웨딩</div>
       <div class="ni" onclick="go('timeline')" data-p="timeline"><span class="ni-ico">▷</span>타임라인</div>
+      <div class="ndiv"></div>
+      <div class="ni" onclick="go('settings')" data-p="settings"><span class="ni-ico">⚙</span>설정</div>
     </nav>
   </aside>
   <div class="main">
@@ -220,9 +266,17 @@ html,body{height:100%}
 </div>
 
 <script>
-const WEDDING = new Date('2027-02-14')
-const TODAY   = new Date('2026-06-22')
-document.getElementById('dday').textContent = 'D-' + Math.ceil((WEDDING-TODAY)/86400000)
+const TODAY_STR = '2026-06-22'
+const TODAY = new Date(TODAY_STR)
+
+function updDday(){
+  const wd = new Date(D.settings.weddingDate)
+  const diff = Math.ceil((wd - TODAY) / 86400000)
+  document.getElementById('dday').textContent = diff > 0 ? 'D-'+diff : diff === 0 ? 'D-DAY' : 'D+'+Math.abs(diff)
+  const m = wd.getMonth()+1, d2 = wd.getDate()
+  document.getElementById('brand-date').textContent = wd.getFullYear()+'년 '+m+'월 '+d2+'일'
+}
+updDday()
 
 const STS = ['후보','검토중','확정','탈락']
 const CN  = {hall:'웨딩홀',studio:'스튜디오',makeup:'메이크업',dress:'드레스'}
@@ -309,7 +363,16 @@ let D = ld() || {
     {id:9002,cat:'드레스',name:'로맨틱 브라이드 1차 방문 예약금',amount:50000,date:'2026-06-19',note:'방문 후 환불 가능'},
     {id:9003,cat:'예물',name:'예물 반지 계약금',amount:500000,date:'2026-06-15',note:'판도라 잠실점'},
     {id:9004,cat:'기타',name:'웨딩박람회 입장',amount:20000,date:'2026-06-10',note:''},
-  ]
+  ],
+  jwedding:{
+    '2026-06-21':{post:true,postUrl:'',comment:true,commentUrl:''},
+    '2026-06-20':{post:true,postUrl:'',comment:false,commentUrl:''},
+    '2026-06-18':{post:false,postUrl:'',comment:true,commentUrl:''},
+  },
+  settings:{
+    weddingDate:'2027-02-14',
+    budget:30000000,
+  }
 }
 
 let cur='dashboard', filt='all', stab='list', cmpMode=false, cmpSet=new Set(), addCat=null
@@ -321,12 +384,15 @@ function go(p){
   cur=p; filt='all'; stab='list'; cmpMode=false; cmpSet.clear()
   document.querySelectorAll('.ni').forEach(e=>e.classList.toggle('on',e.dataset.p===p))
   const expTotal=D.expenses.reduce((s,e)=>s+e.amount,0)
-  const titles={dashboard:['대시보드','전체 준비 현황'],hall:['웨딩홀',allV('hall').length+'개 후보'],studio:['스튜디오',allV('studio').length+'개 후보'],makeup:['메이크업',allV('makeup').length+'개 후보'],dress:['드레스',allV('dress').length+'개 후보'],expense:['지출 관리','지금까지 '+fp(expTotal)+' 사용'],timeline:['타임라인','준비 일정 관리']}
+  const jwDays=Object.values(D.jwedding)
+  const jwPosts=jwDays.filter(d=>d.post).length
+  const titles={dashboard:['대시보드','전체 준비 현황'],hall:['웨딩홀',allV('hall').length+'개 후보'],studio:['스튜디오',allV('studio').length+'개 후보'],makeup:['메이크업',allV('makeup').length+'개 후보'],dress:['드레스',allV('dress').length+'개 후보'],expense:['지출 관리','지금까지 '+fp(expTotal)+' 사용'],jwedding:['제이웨딩','글 '+jwPosts+'일 작성'],timeline:['타임라인','준비 일정 관리'],settings:['설정','']}
   const [t,s]=titles[p]||['','']
   document.getElementById('pt').textContent=t
   document.getElementById('ps').textContent=s
   const ha=document.getElementById('has')
   if(p==='expense') ha.innerHTML=`<button class="btn p" onclick="openAddExpense()">+ 지출 추가</button>`
+  else if(p==='settings') ha.innerHTML=`<button class="btn p" onclick="saveSettings()">저장</button>`
   else ha.innerHTML=CN[p]?`<button class="btn p" onclick="openAdd()">+ 추가</button>`:''
   updCF()
   render()
@@ -338,6 +404,8 @@ function render(){
   if(cur==='dashboard') el.innerHTML=rDash()
   else if(cur==='timeline') el.innerHTML=rTl()
   else if(cur==='expense') el.innerHTML=rExpense()
+  else if(cur==='jwedding') el.innerHTML=rJwedding()
+  else if(cur==='settings') el.innerHTML=rSettings()
   else el.innerHTML=rVendors(cur)
 }
 
@@ -500,11 +568,20 @@ function rExpense(){
       </div>`
     }).join('')
 
+  const budget=D.settings.budget||0
+  const remaining=budget-total
+  const budgetPct=budget?Math.min(100,Math.round(total/budget*100)):0
+  const overBudget=remaining<0
+
   return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px">
     <div class="card">
       <div class="sl">총 지출</div>
       <div style="font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:32px;color:var(--a);margin:8px 0">${fp(total)}</div>
       <div style="font-size:11px;color:var(--tm)">${exps.length}건 기록됨</div>
+      ${budget?`<div class="pb" style="margin-top:10px"><div class="pf" style="width:${budgetPct}%;background:${overBudget?'var(--no)':''}"></div></div>
+      <div style="font-size:11px;margin-top:6px;color:${overBudget?'var(--no)':'var(--tm)'}">
+        ${overBudget?'⚠ 예산 초과 '+fp(Math.abs(remaining)):'남은 예산 '+fp(remaining)+' ('+budgetPct+'% 사용)'}
+      </div>`:'<div style="font-size:11px;color:var(--a);margin-top:8px;cursor:pointer" onclick="go(\'settings\')">→ 설정에서 예산 입력하기</div>'}
     </div>
     <div class="card">
       <div class="sl" style="margin-bottom:12px">카테고리별</div>
@@ -555,6 +632,139 @@ function delExpense(id){
   if(!confirm('이 지출 내역을 삭제할까요?'))return
   D.expenses=D.expenses.filter(e=>e.id!==id)
   sv(); render()
+}
+
+let calYear=TODAY.getFullYear(), calMonth=TODAY.getMonth()
+
+function rJwedding(){
+  const todayData=D.jwedding[TODAY_STR]||{post:false,postUrl:'',comment:false,commentUrl:''}
+  const postDone=todayData.post, commentDone=todayData.comment
+
+  const postCard=`<div class="jw-card ${postDone?'done':''}" id="jw-post-card">
+    <div class="jw-card-top">
+      <div>
+        <div class="jw-card-label">오늘 글 작성</div>
+        <div style="font-size:11px;color:var(--tm);margin-top:2px">제이웨딩에 글을 썼나요?</div>
+      </div>
+      <button class="jw-toggle" onclick="toggleJw('post')" title="토글"></button>
+    </div>
+    ${postDone?`
+      <input class="jw-url-input" id="jw-post-url" placeholder="글 링크 붙여넣기 (선택)" value="${todayData.postUrl||''}" oninput="saveJwUrl('post',this.value)"/>
+      ${todayData.postUrl?`<a class="jw-url-link" href="${todayData.postUrl}" target="_blank">↗ 링크 열기</a>`:''}
+    `:''}
+  </div>`
+
+  const commentCard=`<div class="jw-card ${commentDone?'done':''}" id="jw-comment-card">
+    <div class="jw-card-top">
+      <div>
+        <div class="jw-card-label">오늘 댓글 작성</div>
+        <div style="font-size:11px;color:var(--tm);margin-top:2px">제이웨딩에 댓글을 썼나요?</div>
+      </div>
+      <button class="jw-toggle" onclick="toggleJw('comment')" title="토글"></button>
+    </div>
+    ${commentDone?`
+      <input class="jw-url-input" id="jw-comment-url" placeholder="댓글 링크 붙여넣기 (선택)" value="${todayData.commentUrl||''}" oninput="saveJwUrl('comment',this.value)"/>
+      ${todayData.commentUrl?`<a class="jw-url-link" href="${todayData.commentUrl}" target="_blank">↗ 링크 열기</a>`:''}
+    `:''}
+  </div>`
+
+  // calendar
+  const year=calYear, month=calMonth
+  const firstDay=new Date(year,month,1).getDay()
+  const daysInMonth=new Date(year,month+1,0).getDate()
+  const monthLabel=(month+1)+'월 '+year
+
+  const dayHeaders=['일','월','화','수','목','금','토'].map(d=>`<div class="cal-head-day">${d}</div>`).join('')
+
+  let cells=''
+  for(let i=0;i<firstDay;i++) cells+=`<div class="cal-cell other-month"></div>`
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0')
+    const data=D.jwedding[dateStr]
+    const isToday=dateStr===TODAY_STR
+    const hasPost=data&&data.post, hasComment=data&&data.comment
+    let cls='cal-cell'
+    if(isToday) cls+=' today'
+    if(hasPost&&hasComment) cls+=' both'
+    else if(hasPost) cls+=' post-only'
+    else if(hasComment) cls+=' comment-only'
+    const dots=hasPost||hasComment?`<div class="cal-dots">${hasPost?'<div class="cal-dot"></div>':''}${hasComment?'<div class="cal-dot" style="opacity:.5"></div>':''}</div>`:''
+    cells+=`<div class="${cls}">${d}${dots}</div>`
+  }
+
+  // stats
+  const allDays=Object.entries(D.jwedding)
+  const postCount=allDays.filter(([,d])=>d.post).length
+  const commentCount=allDays.filter(([,d])=>d.comment).length
+  const bothCount=allDays.filter(([,d])=>d.post&&d.comment).length
+
+  return`<div class="jw-today">${postCard}${commentCard}</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px">
+    <div class="sc"><div class="sl">글 작성일</div><div class="sv a">${postCount}</div><div class="sd">일</div></div>
+    <div class="sc"><div class="sl">댓글 작성일</div><div class="sv a">${commentCount}</div><div class="sd">일</div></div>
+    <div class="sc"><div class="sl">둘 다 완료</div><div class="sv g">${bothCount}</div><div class="sd">일</div></div>
+  </div>
+  <div class="card">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="calMove(-1)">‹</button>
+      <div class="cal-month-label">${monthLabel}</div>
+      <button class="cal-nav-btn" onclick="calMove(1)">›</button>
+    </div>
+    <div class="cal-head">${dayHeaders}</div>
+    <div class="cal-grid">${cells}</div>
+    <div style="display:flex;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--b)">
+      <span style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:var(--a);display:inline-block"></span>글+댓글</span>
+      <span style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(74,143,224,.2);display:inline-block"></span>글만</span>
+      <span style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(74,143,224,.08);display:inline-block"></span>댓글만</span>
+    </div>
+  </div>`
+}
+
+function toggleJw(type){
+  if(!D.jwedding[TODAY_STR]) D.jwedding[TODAY_STR]={post:false,postUrl:'',comment:false,commentUrl:''}
+  D.jwedding[TODAY_STR][type]=!D.jwedding[TODAY_STR][type]
+  sv(); render()
+}
+
+function saveJwUrl(type,val){
+  if(!D.jwedding[TODAY_STR]) D.jwedding[TODAY_STR]={post:false,postUrl:'',comment:false,commentUrl:''}
+  D.jwedding[TODAY_STR][type+'Url']=val
+  sv()
+}
+
+function calMove(dir){
+  calMonth+=dir
+  if(calMonth<0){calMonth=11;calYear--}
+  if(calMonth>11){calMonth=0;calYear++}
+  render()
+}
+
+function rSettings(){
+  const s=D.settings
+  return`<div class="set-section">
+    <div class="set-title">기본 정보</div>
+    <div class="set-row">
+      <div><div class="set-row-label">결혼 예정일</div><div class="set-row-desc">D-day 계산에 사용돼요</div></div>
+      <input class="set-input" type="date" id="set-date" value="${s.weddingDate}"/>
+    </div>
+  </div>
+  <div class="set-section">
+    <div class="set-title">예산</div>
+    <div class="set-row">
+      <div><div class="set-row-label">총 예산 상한선</div><div class="set-row-desc">지출 페이지에서 남은 예산을 보여줘요</div></div>
+      <input class="set-input" type="number" id="set-budget" value="${s.budget}" placeholder="30000000"/>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:12px;color:var(--tm)">변경 후 우측 상단 저장 버튼을 눌러주세요.</div>`
+}
+
+function saveSettings(){
+  const date=document.getElementById('set-date').value
+  const budget=parseInt(document.getElementById('set-budget').value)||0
+  D.settings.weddingDate=date
+  D.settings.budget=budget
+  sv(); updDday(); go('settings')
+  alert('저장됐어요!')
 }
 
 function doCompare(){stab='compare';render();document.getElementById('cf').classList.remove('show')}
