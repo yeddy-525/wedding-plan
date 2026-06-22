@@ -1,0 +1,638 @@
+<title>우리의 결혼준비 ✦</title>
+<style>
+:root {
+  --g: #F3F7FF;
+  --s: #FFFFFF;
+  --s2: #E8F0FE;
+  --t: #1A2340;
+  --tm: #6B7899;
+  --a: #4A8FE0;
+  --ok: #2EAB74;
+  --no: #D95555;
+  --b: rgba(74,143,224,0.16);
+  --b2: rgba(74,143,224,0.12);
+  font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,sans-serif;
+  font-size:14px; color:var(--t); background:var(--g);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+.layout{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:216px;flex-shrink:0;background:var(--s);border-right:1px solid var(--b);display:flex;flex-direction:column}
+.brand{padding:22px 18px 18px;border-bottom:1px solid var(--b)}
+.brand-name{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:15px;color:var(--a);letter-spacing:.04em}
+.brand-couple{display:none}
+.brand-dday{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:34px;color:var(--t);margin-top:14px;line-height:1}
+.brand-date{font-size:11px;color:var(--tm);margin-top:3px}
+.nav{flex:1;padding:10px 0;overflow-y:auto}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 18px;font-size:13px;color:var(--tm);cursor:pointer;border-left:2px solid transparent;transition:color .12s,background .12s,border-color .12s;user-select:none}
+.ni:hover{background:rgba(74,143,224,.07);color:var(--t)}
+.ni.on{color:var(--a);border-left-color:var(--a);background:rgba(74,143,224,.1)}
+.ni-ico{width:18px;text-align:center}
+.nc{margin-left:auto;font-size:10px;padding:1px 7px;border-radius:10px;background:var(--s2);color:var(--tm)}
+.nc.g{background:rgba(46,171,116,.13);color:var(--ok)}
+.nc.q{background:rgba(74,143,224,.14);color:var(--a)}
+.ndiv{height:1px;background:var(--b);margin:8px 18px}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ph{background:var(--s);border-bottom:1px solid var(--b);padding:18px 26px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.pt{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:20px}
+.ps{font-size:11px;color:var(--tm);margin-top:2px}
+.has{display:flex;gap:8px;align-items:center}
+.btn{padding:6px 14px;border-radius:7px;border:1px solid var(--b2);background:transparent;color:var(--tm);font-size:12px;cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap}
+.btn:hover{border-color:var(--a);color:var(--a)}
+.btn.p{background:var(--a);border-color:var(--a);color:#1C1520;font-weight:600}
+.btn.p:hover{background:#D4B87A;border-color:#D4B87A}
+.pc{flex:1;overflow-y:auto;padding:22px 26px}
+
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.sc{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:15px 17px}
+.sl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);margin-bottom:6px}
+.sv{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:28px;line-height:1}
+.sv.a{color:var(--a)} .sv.g{color:var(--ok)}
+.sd{font-size:11px;color:var(--tm);margin-top:4px}
+.pb{height:3px;background:var(--s2);border-radius:2px;margin-top:10px;overflow:hidden}
+.pf{height:100%;background:linear-gradient(90deg,var(--a),#7EC8F0);border-radius:2px}
+
+/* LAYOUT */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.stit{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);margin-bottom:11px}
+.card{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:17px}
+
+/* TASKS */
+.ti{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:background .1s;margin-bottom:4px}
+.ti:hover{background:var(--s2)}
+.tck{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--tm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;transition:all .12s}
+.ti.dn .tck{background:var(--ok);border-color:var(--ok);color:#fff}
+.tt{flex:1;font-size:12px}
+.ti.dn .tt{text-decoration:line-through;color:var(--tm)}
+.td{font-size:10px;color:var(--tm)}
+
+/* ACTIVITY */
+.ai{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--b);font-size:12px}
+.ai:last-child{border-bottom:none}
+.ad{width:6px;height:6px;border-radius:50%;background:var(--a);flex-shrink:0;margin-top:3px}
+.ad.g{background:var(--ok)} .ad.r{background:var(--no)}
+.ab{flex:1}
+.an{color:var(--t);font-weight:500}
+.adet{color:var(--tm);font-size:11px;margin-top:2px}
+.at{color:var(--tm);font-size:11px;white-space:nowrap}
+
+/* FILTER */
+.fb{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.chip{padding:4px 12px;border-radius:20px;border:1px solid var(--b2);background:transparent;color:var(--tm);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s}
+.chip:hover{border-color:var(--tm);color:var(--t)}
+.chip.on{background:rgba(201,169,110,.12);border-color:var(--a);color:var(--a)}
+.cmt{margin-left:auto;font-size:11px;color:var(--tm);cursor:pointer;display:flex;align-items:center;gap:5px}
+.cmt input{cursor:pointer;accent-color:var(--a)}
+
+/* VENDOR CARDS */
+.vg{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:13px}
+.vc{background:var(--s);border:1px solid var(--b);border-radius:10px;padding:17px;transition:border-color .12s,transform .12s;position:relative}
+.vc:hover{border-color:rgba(201,169,110,.35);transform:translateY(-1px)}
+.vc.sel{border-color:var(--a);background:rgba(201,169,110,.04)}
+.vch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
+.vn{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:15px;line-height:1.3;flex:1}
+.sb{font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;cursor:pointer;white-space:nowrap;flex-shrink:0;letter-spacing:.03em;transition:opacity .1s}
+.sb:hover{opacity:.75}
+.s후보{background:rgba(107,120,153,.12);color:#6B7899}
+.s검토중{background:rgba(74,143,224,.14);color:var(--a)}
+.s확정{background:rgba(46,171,116,.13);color:var(--ok)}
+.s탈락{background:rgba(217,85,85,.12);color:var(--no)}
+.vp{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:20px;margin-bottom:4px}
+.vdep{font-size:11px;color:var(--tm);font-family:inherit;margin-left:4px}
+.vm{font-size:11px;color:var(--tm);margin-bottom:9px;display:flex;gap:12px}
+.vtags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.vtag{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--s2);color:var(--tm)}
+.vnote{font-size:11px;color:var(--tm);line-height:1.5;border-top:1px solid var(--b);padding-top:9px}
+
+/* COMPARE FLOAT */
+.cf{position:fixed;bottom:0;left:216px;right:0;background:#fff;border-top:1px solid rgba(74,143,224,.25);padding:11px 26px;display:flex;align-items:center;gap:12px;transform:translateY(100%);transition:transform .2s;z-index:50}
+.cf.show{transform:translateY(0)}
+.cfi{flex:1;font-size:12px;color:var(--tm)}
+.cfi strong{color:var(--a)}
+
+/* COMPARE TABLE */
+.ctwrap{overflow-x:auto;border:1px solid var(--b);border-radius:10px}
+.ctbl{width:100%;border-collapse:collapse;font-size:12px;min-width:460px}
+.ctbl th,.ctbl td{padding:10px 15px;border:1px solid var(--b);text-align:left;vertical-align:top}
+.ctbl thead th{background:var(--s);font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:14px;font-weight:normal}
+.ctbl thead th:first-child{font-family:inherit;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--tm);width:90px}
+.ctbl thead th.ch{color:var(--ok)}
+.ctbl tbody td:first-child{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--tm);background:var(--s);white-space:nowrap}
+.ctbl tbody tr:nth-child(odd) td:not(:first-child){background:rgba(255,255,255,.01)}
+.cprice{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:17px;color:var(--a)}
+
+/* TIMELINE */
+.tlm{margin-bottom:22px}
+.tlmh{display:flex;align-items:center;gap:14px;margin-bottom:9px}
+.tml{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:15px;color:var(--a);white-space:nowrap}
+.tld{flex:1;height:1px;background:var(--b)}
+.tlt{display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--s);border:1px solid var(--b);border-radius:8px;margin-bottom:5px;cursor:pointer;transition:border-color .12s}
+.tlt:hover{border-color:rgba(201,169,110,.3)}
+.tlt.dn{opacity:.45}
+.tlck{width:17px;height:17px;border-radius:50%;border:1.5px solid var(--tm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;transition:all .12s}
+.tlt.dn .tlck{background:var(--ok);border-color:var(--ok);color:#fff}
+.tlt.dn .tltxt{text-decoration:line-through}
+.tltxt{flex:1;font-size:12px}
+.tlcat{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--s2);color:var(--tm)}
+
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(26,35,64,.35);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:200}
+.mbox{background:var(--s);border:1px solid rgba(201,169,110,.25);border-radius:14px;padding:24px;width:455px;max-width:calc(100vw - 32px);max-height:calc(100vh - 64px);overflow-y:auto}
+.mtit{font-family:"Palatino Linotype",Palatino,Georgia,serif;font-size:18px;margin-bottom:17px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--tm);margin-bottom:5px}
+.fi,.fsel{width:100%;padding:8px 11px;background:var(--g);border:1px solid var(--b);border-radius:7px;color:var(--t);font-size:12px;font-family:inherit;outline:none;transition:border-color .12s}
+.fi:focus,.fsel:focus{border-color:var(--a)}
+.fsel option{background:#241929}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+/* SEC TABS */
+.stabs{display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--b)}
+.stab{padding:7px 15px;font-size:12px;color:var(--tm);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s}
+.stab.on{color:var(--a);border-bottom-color:var(--a)}
+.stab:hover:not(.on){color:var(--t)}
+
+.exp-row{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--b);position:relative}
+.exp-row:last-child{border-bottom:none}
+.exp-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.exp-body{flex:1;min-width:0}
+.exp-name{font-size:13px;color:var(--t)}
+.exp-note{font-size:11px;color:var(--tm);margin-top:2px}
+.exp-amount{font-size:14px;font-weight:600;color:var(--t)}
+.exp-date{font-size:10px;color:var(--tm);margin-top:2px}
+.exp-cat-badge{font-size:10px;padding:2px 8px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.exp-del{background:none;border:none;color:var(--tm);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;transition:color .1s;flex-shrink:0}
+.exp-del:hover{color:var(--no)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
+
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.pc{animation:fi .15s ease}
+@media(prefers-reduced-motion:reduce){.pc{animation:none}.vc,.ni,.btn,.chip,.tlt,.ti{transition:none}}
+</style>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-name">✦ 우리의 결혼준비</div>
+      <div class="brand-couple">YJ &amp; JE</div>
+      <div class="brand-dday" id="dday">D-237</div>
+      <div class="brand-date">2027년 2월 14일</div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="ni on" onclick="go('dashboard')" data-p="dashboard"><span class="ni-ico">◈</span>대시보드</div>
+      <div class="ni" onclick="go('hall')" data-p="hall"><span class="ni-ico">⌂</span>웨딩홀<span class="nc q" id="nc-hall">3</span></div>
+      <div class="ni" onclick="go('studio')" data-p="studio"><span class="ni-ico">□</span>스튜디오<span class="nc" id="nc-studio">2</span></div>
+      <div class="ni" onclick="go('makeup')" data-p="makeup"><span class="ni-ico">◇</span>메이크업<span class="nc g" id="nc-makeup">1</span></div>
+      <div class="ni" onclick="go('dress')" data-p="dress"><span class="ni-ico">♡</span>드레스<span class="nc" id="nc-dress">2</span></div>
+      <div class="ndiv"></div>
+      <div class="ni" onclick="go('expense')" data-p="expense"><span class="ni-ico">₩</span>지출 관리</div>
+      <div class="ni" onclick="go('timeline')" data-p="timeline"><span class="ni-ico">▷</span>타임라인</div>
+    </nav>
+  </aside>
+  <div class="main">
+    <div class="ph">
+      <div>
+        <h1 class="pt" id="pt">대시보드</h1>
+        <div class="ps" id="ps">전체 준비 현황</div>
+      </div>
+      <div class="has" id="has"></div>
+    </div>
+    <div class="pc" id="con"></div>
+  </div>
+</div>
+
+<div class="cf" id="cf">
+  <div class="cfi" id="cfi"></div>
+  <button class="btn p" onclick="doCompare()">비교하기</button>
+  <button class="btn" onclick="clearCmp()">취소</button>
+</div>
+
+<div class="mbg" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="mbox" id="mbox"></div>
+</div>
+
+<script>
+const WEDDING = new Date('2027-02-14')
+const TODAY   = new Date('2026-06-22')
+document.getElementById('dday').textContent = 'D-' + Math.ceil((WEDDING-TODAY)/86400000)
+
+const STS = ['후보','검토중','확정','탈락']
+const CN  = {hall:'웨딩홀',studio:'스튜디오',makeup:'메이크업',dress:'드레스'}
+
+function fp(n){
+  if(!n)return'-'
+  if(n>=10000000)return(Math.round(n/100000)/100)+'천만원'
+  if(n>=10000)return Math.round(n/10000)+'만원'
+  return n.toLocaleString()+'원'
+}
+
+function ld(){try{return JSON.parse(localStorage.getItem('wd'))||null}catch{return null}}
+function sv(){try{localStorage.setItem('wd',JSON.stringify(D))}catch{}}
+
+let D = ld() || {
+  vendors:{
+    hall:[
+      {id:1,name:'더시그니처 웨딩홀',price:3500000,deposit:500000,loc:'강남구',cap:'250명',status:'검토중',tags:['주차 100대','야외 정원','뷔페 별도'],note:'주말 할인 없음, 평일 10% 할인. 뷔페 1인 8만원 별도.'},
+      {id:2,name:'그랜드 인터컨티넨탈',price:5200000,deposit:1000000,loc:'삼성동',cap:'300명',status:'후보',tags:['호텔 웨딩','뷔페 포함','발레파킹'],note:'JE 추천. 음식 후기 최고. 가격 부담됨.'},
+      {id:3,name:'아모리스 웨딩',price:2800000,deposit:300000,loc:'마포구',cap:'180명',status:'탈락',tags:['스몰 웨딩','내추럴 인테리어'],note:'분위기 좋은데 규모가 작아서 탈락.'},
+    ],
+    studio:[
+      {id:4,name:'앤드스튜디오',price:1600000,deposit:200000,loc:'성수동',cap:null,status:'후보',tags:['야외 로케','내추럴 보정','원본 파일'],note:'인스타 감성 너무 좋음. 야외 추가비 있음.'},
+      {id:5,name:'아뜰리에 화이트',price:2400000,deposit:300000,loc:'청담동',cap:null,status:'검토중',tags:['스튜디오 전용','드레스샵 제휴'],note:'로맨틱 브라이드 연계 15% 할인. 견적 재확인 필요.'},
+    ],
+    makeup:[
+      {id:6,name:'이채원 메이크업',price:800000,deposit:100000,loc:'강남구',cap:null,status:'확정',tags:['웨딩 전문','자연스러운 연출','트라이얼 포함'],note:'친구 결혼식에서 봤는데 진짜 예뻤음. 계약금 입금 완료.'},
+    ],
+    dress:[
+      {id:7,name:'로맨틱 브라이드',price:3200000,deposit:500000,loc:'청담동',cap:null,status:'검토중',tags:['A라인','볼룸','맞춤 제작'],note:'1차 방문 완료. A라인 너무 예뻤음. 다음 주 2차 방문 예약.'},
+      {id:8,name:'엘르 브라이덜',price:1800000,deposit:200000,loc:'압구정',cap:null,status:'후보',tags:['미니멀','슬림핏','대여 가능'],note:'홈페이지 보고 마음에 들어서 추가.'},
+    ],
+  },
+  tasks:[
+    {id:1,text:'이채원 메이크업 계약 완료',date:'완료',dn:true},
+    {id:2,text:'로맨틱 브라이드 2차 방문 및 피팅',date:'6/25',dn:false},
+    {id:3,text:'아뜰리에 화이트 견적서 재확인',date:'6/27',dn:false},
+    {id:4,text:'더시그니처 주말 예약 가능 여부 문의',date:'6/28',dn:false},
+  ],
+  tl:[
+    {id:1,mo:'결혼 12개월 전',tasks:[
+      {id:101,text:'결혼 날짜 및 장소 유형 결정',cat:'전체',dn:true},
+      {id:102,text:'총 예산 책정',cat:'전체',dn:true},
+      {id:103,text:'예식장 리스트업 및 방문',cat:'웨딩홀',dn:true},
+    ]},
+    {id:2,mo:'결혼 10개월 전',tasks:[
+      {id:201,text:'웨딩홀 계약',cat:'웨딩홀',dn:false},
+      {id:202,text:'스튜디오 리스트업',cat:'스튜디오',dn:true},
+      {id:203,text:'드레스샵 방문 시작',cat:'드레스',dn:true},
+    ]},
+    {id:3,mo:'결혼 8개월 전',tasks:[
+      {id:301,text:'스튜디오 계약',cat:'스튜디오',dn:false},
+      {id:302,text:'드레스 계약',cat:'드레스',dn:false},
+      {id:303,text:'메이크업 계약',cat:'메이크업',dn:true},
+    ]},
+    {id:4,mo:'결혼 6개월 전',tasks:[
+      {id:401,text:'청첩장 디자인 선정',cat:'청첩장',dn:false},
+      {id:402,text:'신혼여행 예약',cat:'여행',dn:false},
+      {id:403,text:'본식 스냅 계약',cat:'스냅',dn:false},
+    ]},
+    {id:5,mo:'결혼 4개월 전',tasks:[
+      {id:501,text:'청첩장 발주',cat:'청첩장',dn:false},
+      {id:502,text:'혼수 구입 시작',cat:'혼수',dn:false},
+      {id:503,text:'드레스 1차 피팅',cat:'드레스',dn:false},
+    ]},
+    {id:6,mo:'결혼 2개월 전',tasks:[
+      {id:601,text:'청첩장 발송',cat:'청첩장',dn:false},
+      {id:602,text:'혼수 구입 완료',cat:'혼수',dn:false},
+      {id:603,text:'메이크업 트라이얼',cat:'메이크업',dn:false},
+    ]},
+    {id:7,mo:'결혼 1개월 전',tasks:[
+      {id:701,text:'드레스 최종 피팅',cat:'드레스',dn:false},
+      {id:702,text:'하객 식사 인원 최종 확인',cat:'웨딩홀',dn:false},
+      {id:703,text:'신혼여행 짐 준비',cat:'여행',dn:false},
+    ]},
+    {id:8,mo:'결혼 1주일 전',tasks:[
+      {id:801,text:'각 업체 최종 컨펌 연락',cat:'전체',dn:false},
+      {id:802,text:'당일 타임라인 정리',cat:'전체',dn:false},
+      {id:803,text:'혼인신고 서류 준비',cat:'전체',dn:false},
+    ]},
+  ],
+  expenses:[
+    {id:9001,cat:'메이크업',name:'이채원 메이크업 계약금',amount:100000,date:'2026-06-21',note:'잔금 70만원 당일 결제'},
+    {id:9002,cat:'드레스',name:'로맨틱 브라이드 1차 방문 예약금',amount:50000,date:'2026-06-19',note:'방문 후 환불 가능'},
+    {id:9003,cat:'예물',name:'예물 반지 계약금',amount:500000,date:'2026-06-15',note:'판도라 잠실점'},
+    {id:9004,cat:'기타',name:'웨딩박람회 입장',amount:20000,date:'2026-06-10',note:''},
+  ]
+}
+
+let cur='dashboard', filt='all', stab='list', cmpMode=false, cmpSet=new Set(), addCat=null
+
+function allV(cat){return D.vendors[cat]||[]}
+function flatV(){return Object.values(D.vendors).flat()}
+
+function go(p){
+  cur=p; filt='all'; stab='list'; cmpMode=false; cmpSet.clear()
+  document.querySelectorAll('.ni').forEach(e=>e.classList.toggle('on',e.dataset.p===p))
+  const expTotal=D.expenses.reduce((s,e)=>s+e.amount,0)
+  const titles={dashboard:['대시보드','전체 준비 현황'],hall:['웨딩홀',allV('hall').length+'개 후보'],studio:['스튜디오',allV('studio').length+'개 후보'],makeup:['메이크업',allV('makeup').length+'개 후보'],dress:['드레스',allV('dress').length+'개 후보'],expense:['지출 관리','지금까지 '+fp(expTotal)+' 사용'],timeline:['타임라인','준비 일정 관리']}
+  const [t,s]=titles[p]||['','']
+  document.getElementById('pt').textContent=t
+  document.getElementById('ps').textContent=s
+  const ha=document.getElementById('has')
+  if(p==='expense') ha.innerHTML=`<button class="btn p" onclick="openAddExpense()">+ 지출 추가</button>`
+  else ha.innerHTML=CN[p]?`<button class="btn p" onclick="openAdd()">+ 추가</button>`:''
+  updCF()
+  render()
+}
+
+function render(){
+  const el=document.getElementById('con')
+  el.style.animation='none'; el.offsetHeight; el.style.animation=''
+  if(cur==='dashboard') el.innerHTML=rDash()
+  else if(cur==='timeline') el.innerHTML=rTl()
+  else if(cur==='expense') el.innerHTML=rExpense()
+  else el.innerHTML=rVendors(cur)
+}
+
+function totalSpent(){return D.expenses.reduce((s,e)=>s+e.amount,0)}
+
+function rDash(){
+  const all=flatV()
+  const conf=all.filter(v=>v.status==='확정').length
+  const rev=all.filter(v=>v.status==='검토중').length
+  const cand=all.filter(v=>v.status==='후보').length
+  const spent=totalSpent()
+  const tlAll=D.tl.flatMap(m=>m.tasks)
+  const tlDone=tlAll.filter(t=>t.dn).length
+  const tlPct=Math.round(tlDone/tlAll.length*100)
+
+  const tasks=D.tasks.map(t=>`<div class="ti ${t.dn?'dn':''}" onclick="toggleTask(${t.id})"><div class="tck">${t.dn?'✓':''}</div><span class="tt">${t.text}</span><span class="td">${t.date}</span></div>`).join('')
+
+  // top 3 expense categories for dashboard
+  const byCat={}
+  D.expenses.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount})
+  const topCats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,a])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--b)"><span style="font-size:11px;color:var(--tm)">${c}</span><span style="font-size:12px;font-weight:600;color:var(--t)">${fp(a)}</span></div>`).join('')
+
+  return`<div class="sg">
+    <div class="sc"><div class="sl">확정</div><div class="sv g">${conf}</div><div class="sd">메이크업</div></div>
+    <div class="sc"><div class="sl">검토중</div><div class="sv a">${rev}</div><div class="sd">홀·스튜디오·드레스</div></div>
+    <div class="sc"><div class="sl">후보</div><div class="sv">${cand}</div><div class="sd">결정 전</div></div>
+    <div class="sc" style="cursor:pointer" onclick="go('expense')">
+      <div class="sl">지금까지 쓴 돈 💸</div>
+      <div class="sv a" style="font-size:21px">${fp(spent)}</div>
+      <div style="margin-top:10px">${topCats}</div>
+      <div style="font-size:10px;color:var(--a);margin-top:8px">→ 전체 내역 보기</div>
+    </div>
+  </div>
+  <div class="stit">타임라인 진행 — ${tlDone}/${tlAll.length} 완료 (${tlPct}%)</div>
+  <div class="pb" style="height:5px;margin-bottom:20px"><div class="pf" style="width:${tlPct}%"></div></div>
+  <div class="two">
+    <div><div class="stit">이번 주 할 일</div><div class="card">${tasks}</div></div>
+    <div><div class="stit">최근 업데이트</div><div class="card">
+      <div class="ai"><div class="ad g"></div><div class="ab"><div class="an">이채원 메이크업 → 확정</div><div class="adet">친구 추천, 계약금 입금 완료</div></div><div class="at">어제</div></div>
+      <div class="ai"><div class="ad"></div><div class="ab"><div class="an">로맨틱 브라이드 → 검토중</div><div class="adet">1차 방문 완료, 마음에 듦</div></div><div class="at">2일 전</div></div>
+      <div class="ai"><div class="ad r"></div><div class="ab"><div class="an">아모리스 웨딩 → 탈락</div><div class="adet">규모가 작아 탈락</div></div><div class="at">3일 전</div></div>
+      <div class="ai"><div class="ad"></div><div class="ab"><div class="an">그랜드 인터컨티넨탈 추가</div><div class="adet">JE 추천</div></div><div class="at">5일 전</div></div>
+    </div></div>
+  </div>`
+}
+
+function rVendors(cat){
+  const vs=allV(cat)
+  const statuses=[...new Set(vs.map(v=>v.status))]
+  const chips=['all',...statuses].map(f=>`<button class="chip ${filt===f?'on':''}" onclick="setF('${f}')">${f==='all'?'전체 ('+vs.length+')':f+' ('+vs.filter(v=>v.status===f).length+')'}</button>`).join('')
+
+  let body=''
+  if(stab==='compare'){
+    const sel=vs.filter(v=>cmpSet.has(v.id))
+    body=sel.length<2
+      ?`<div style="text-align:center;padding:40px;color:var(--tm);font-size:13px">카드 2개 이상을 선택 후 비교하기를 누르세요.</div>`
+      :rCmpTbl(sel)
+  } else {
+    const fil=filt==='all'?vs:vs.filter(v=>v.status===filt)
+    const cards=fil.length?fil.map(v=>rCard(v)).join(''):`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--tm);font-size:13px">이 상태의 업체가 없어요.</div>`
+    body=`<div class="fb">${chips}<label class="cmt"><input type="checkbox" ${cmpMode?'checked':''} onchange="setCmpMode(this.checked)"> 비교 선택 모드</label></div><div class="vg">${cards}</div>`
+  }
+
+  return`<div class="stabs">
+    <div class="stab ${stab==='list'?'on':''}" onclick="setST('list')">목록</div>
+    <div class="stab ${stab==='compare'?'on':''}" onclick="setST('compare')">비교${cmpSet.size?` (${cmpSet.size})`:''}</div>
+  </div>${body}`
+}
+
+function rCard(v){
+  const sel=cmpSet.has(v.id)
+  const tags=(v.tags||[]).map(t=>`<span class="vtag">${t}</span>`).join('')
+  return`<div class="vc ${sel?'sel':''}" onclick="${cmpMode?'toggleSel('+v.id+')':''}">
+    <div class="vch"><div class="vn">${v.name}</div><span class="sb s${v.status}" onclick="event.stopPropagation();cycSt(${v.id})" title="클릭해서 상태 변경">${v.status}</span></div>
+    <div class="vp">${fp(v.price)}<span class="vdep">/ 계약금 ${fp(v.deposit)}</span></div>
+    <div class="vm"><span>📍 ${v.loc}</span>${v.cap?'<span>👥 '+v.cap+'</span>':''}</div>
+    ${tags?`<div class="vtags">${tags}</div>`:''}
+    ${v.note?`<div class="vnote">${v.note}</div>`:''}
+  </div>`
+}
+
+function rCmpTbl(vs){
+  const rows=[
+    ['가격',v=>`<span class="cprice">${fp(v.price)}</span>`],
+    ['계약금',v=>fp(v.deposit)],
+    ['위치',v=>v.loc],
+    ['인원',v=>v.cap||'-'],
+    ['상태',v=>`<span class="sb s${v.status}">${v.status}</span>`],
+    ['특징',v=>(v.tags||[]).map(t=>`<span class="vtag">${t}</span>`).join(' ')],
+    ['메모',v=>v.note||'-'],
+  ]
+  const ths=vs.map(v=>`<th class="${v.status==='확정'?'ch':''}">${v.name}</th>`).join('')
+  const trs=rows.map(([l,fn])=>`<tr><td>${l}</td>${vs.map(v=>`<td>${fn(v)}</td>`).join('')}</tr>`).join('')
+  return`<div class="ctwrap"><table class="ctbl"><thead><tr><th></th>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`
+}
+
+function rTl(){
+  return D.tl.map(m=>{
+    const done=m.tasks.filter(t=>t.dn).length
+    const tasks=m.tasks.map(t=>`<div class="tlt ${t.dn?'dn':''}" onclick="toggleTl(${t.id})"><div class="tlck">${t.dn?'✓':''}</div><span class="tltxt">${t.text}</span><span class="tlcat">${t.cat}</span></div>`).join('')
+    return`<div class="tlm"><div class="tlmh"><span class="tml">${m.mo}</span><div class="tld"></div><span style="font-size:11px;color:var(--tm);white-space:nowrap">${done}/${m.tasks.length}</span></div><div>${tasks}</div></div>`
+  }).join('')
+}
+
+function setF(f){filt=f;render()}
+function setST(t){stab=t;render()}
+function setCmpMode(on){cmpMode=on;if(!on)cmpSet.clear();updCF();render()}
+function toggleSel(id){if(cmpSet.has(id))cmpSet.delete(id);else cmpSet.add(id);updCF();render()}
+
+function updCF(){
+  const el=document.getElementById('cf')
+  if(cmpMode&&cmpSet.size>0){
+    el.classList.add('show')
+    document.getElementById('cfi').innerHTML=`<strong>${cmpSet.size}개</strong> 선택됨`
+  } else el.classList.remove('show')
+}
+
+const EXP_CATS=['웨딩홀','스튜디오','메이크업','드레스','청첩장','스냅촬영','신혼여행','혼수','예물','예단','기타']
+const CAT_COLORS={'웨딩홀':'#4A8FE0','스튜디오':'#7B68EE','메이크업':'#FF8FAB','드레스':'#F4A261','청첩장':'#2EAB74','스냅촬영':'#20B2AA','신혼여행':'#FF7F50','혼수':'#6B8E23','예물':'#DAA520','예단':'#BC8F8F','기타':'#8A9AB5'}
+
+function rExpense(){
+  const exps=D.expenses
+  const total=exps.reduce((s,e)=>s+e.amount,0)
+
+  // category totals
+  const byCat={}
+  EXP_CATS.forEach(c=>{byCat[c]=0})
+  exps.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount})
+  const usedCats=Object.entries(byCat).filter(([,a])=>a>0).sort((a,b)=>b[1]-a[1])
+
+  const catBars=usedCats.map(([c,a])=>{
+    const pct=total?Math.round(a/total*100):0
+    const col=CAT_COLORS[c]||'#4A8FE0'
+    return`<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block"></span>${c}</span>
+        <span style="font-size:12px;font-weight:600">${fp(a)} <span style="font-size:10px;color:var(--tm);font-weight:normal">${pct}%</span></span>
+      </div>
+      <div style="height:5px;background:var(--s2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${col};border-radius:3px"></div></div>
+    </div>`
+  }).join('')
+
+  const sorted=[...exps].sort((a,b)=>b.date.localeCompare(a.date))
+  const rows=sorted.length===0
+    ?`<div style="text-align:center;padding:40px;color:var(--tm);font-size:13px">아직 지출 내역이 없어요.<br>+ 지출 추가로 기록해보세요.</div>`
+    :sorted.map(e=>{
+      const col=CAT_COLORS[e.cat]||'#4A8FE0'
+      return`<div class="exp-row">
+        <div class="exp-cat-dot" style="background:${col}"></div>
+        <div class="exp-body">
+          <div class="exp-name">${e.name}</div>
+          ${e.note?`<div class="exp-note">${e.note}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="exp-amount">${fp(e.amount)}</div>
+          <div class="exp-date">${e.date}</div>
+        </div>
+        <span class="exp-cat-badge" style="background:${col}18;color:${col}">${e.cat}</span>
+        <button class="exp-del" onclick="delExpense(${e.id})" title="삭제">×</button>
+      </div>`
+    }).join('')
+
+  return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px">
+    <div class="card">
+      <div class="sl">총 지출</div>
+      <div style="font-family:'Palatino Linotype',Palatino,Georgia,serif;font-size:32px;color:var(--a);margin:8px 0">${fp(total)}</div>
+      <div style="font-size:11px;color:var(--tm)">${exps.length}건 기록됨</div>
+    </div>
+    <div class="card">
+      <div class="sl" style="margin-bottom:12px">카테고리별</div>
+      ${catBars||'<div style="font-size:12px;color:var(--tm)">내역을 추가하면 여기에 표시돼요.</div>'}
+    </div>
+  </div>
+  <div class="stit">지출 내역</div>
+  <div class="card" style="padding:8px 16px">${rows}</div>`
+}
+
+function openAddExpense(){
+  document.getElementById('mbox').innerHTML=`
+    <div class="mtit">지출 추가</div>
+    <div class="fg"><label class="fl">항목명 *</label><input class="fi" id="en" placeholder="예: 청첩장 계약금, 스드메 예약금"/></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">금액 (원) *</label><input class="fi" id="ea" type="number" placeholder="100000"/></div>
+      <div class="fg"><label class="fl">날짜</label><input class="fi" id="ed" type="date" value="${new Date().toISOString().slice(0,10)}"/></div>
+    </div>
+    <div class="fg"><label class="fl">카테고리</label>
+      <select class="fsel" id="ec">${EXP_CATS.map(c=>`<option>${c}</option>`).join('')}</select>
+    </div>
+    <div class="fg"><label class="fl">메모</label><input class="fi" id="eno" placeholder="잔금 일정, 특이사항 등"/></div>
+    <div class="ma"><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitExpense()">추가하기</button></div>
+  `
+  document.getElementById('modal').style.display='flex'
+  setTimeout(()=>document.getElementById('en').focus(),50)
+}
+
+function submitExpense(){
+  const name=document.getElementById('en').value.trim()
+  const amt=parseInt(document.getElementById('ea').value)
+  if(!name||!amt){return}
+  D.expenses.push({
+    id:Date.now(),
+    cat:document.getElementById('ec').value,
+    name,
+    amount:amt,
+    date:document.getElementById('ed').value||new Date().toISOString().slice(0,10),
+    note:document.getElementById('eno').value.trim(),
+  })
+  sv(); closeModal()
+  const spent=totalSpent()
+  document.getElementById('ps').textContent='지금까지 '+fp(spent)+' 사용'
+  render()
+}
+
+function delExpense(id){
+  if(!confirm('이 지출 내역을 삭제할까요?'))return
+  D.expenses=D.expenses.filter(e=>e.id!==id)
+  sv(); render()
+}
+
+function doCompare(){stab='compare';render();document.getElementById('cf').classList.remove('show')}
+function clearCmp(){cmpSet.clear();cmpMode=false;updCF();render()}
+
+function cycSt(id){
+  const v=flatV().find(v=>v.id===id)
+  if(!v)return
+  v.status=STS[(STS.indexOf(v.status)+1)%STS.length]
+  sv(); updNC(); render()
+}
+
+function toggleTask(id){
+  const t=D.tasks.find(t=>t.id===id)
+  if(t){t.dn=!t.dn;sv();render()}
+}
+
+function toggleTl(id){
+  for(const m of D.tl){const t=m.tasks.find(t=>t.id===id);if(t){t.dn=!t.dn;sv();render();return}}
+}
+
+function updNC(){
+  Object.keys(D.vendors).forEach(cat=>{
+    const el=document.getElementById('nc-'+cat)
+    if(!el)return
+    const vs=D.vendors[cat]
+    el.textContent=vs.length
+    const conf=vs.some(v=>v.status==='확정')
+    const rev=vs.some(v=>v.status==='검토중')
+    el.className='nc'+(conf?' g':rev?' q':'')
+  })
+}
+
+function openAdd(){
+  addCat=cur
+  document.getElementById('mbox').innerHTML=`
+    <div class="mtit">${CN[addCat]} 추가</div>
+    <div class="fg"><label class="fl">업체명 *</label><input class="fi" id="fn" placeholder="업체 이름을 입력하세요"/></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">가격 (원)</label><input class="fi" id="fp" type="number" placeholder="3000000"/></div>
+      <div class="fg"><label class="fl">계약금 (원)</label><input class="fi" id="fd" type="number" placeholder="500000"/></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">위치</label><input class="fi" id="fl2" placeholder="강남구"/></div>
+      ${addCat==='hall'?'<div class="fg"><label class="fl">수용 인원</label><input class="fi" id="fcap" placeholder="200명"/></div>':'<div></div>'}
+    </div>
+    <div class="fg"><label class="fl">특징 태그 (쉼표 구분)</label><input class="fi" id="ftags" placeholder="뷔페 포함, 주차 50대"/></div>
+    <div class="fg"><label class="fl">메모</label><textarea class="fi" id="fnote" rows="3" placeholder="방문 후기, 특이사항 등"></textarea></div>
+    <div class="fg"><label class="fl">상태</label><select class="fsel" id="fst"><option>후보</option><option>검토중</option><option>확정</option><option>탈락</option></select></div>
+    <div class="ma"><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitAdd()">추가하기</button></div>
+  `
+  document.getElementById('modal').style.display='flex'
+  setTimeout(()=>document.getElementById('fn').focus(),50)
+}
+
+function closeModal(){document.getElementById('modal').style.display='none'}
+
+function submitAdd(){
+  const name=document.getElementById('fn').value.trim()
+  if(!name){document.getElementById('fn').focus();return}
+  const tagsRaw=document.getElementById('ftags').value
+  const capEl=document.getElementById('fcap')
+  D.vendors[addCat].push({
+    id:Date.now(),
+    name,
+    price:parseInt(document.getElementById('fp').value)||0,
+    deposit:parseInt(document.getElementById('fd').value)||0,
+    loc:document.getElementById('fl2').value.trim()||'-',
+    cap:capEl?(capEl.value.trim()||null):null,
+    status:document.getElementById('fst').value,
+    tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],
+    note:document.getElementById('fnote').value.trim(),
+  })
+  sv(); updNC(); closeModal()
+  document.getElementById('ps').textContent=allV(addCat).length+'개 후보'
+  render()
+}
+
+updNC()
+render()
+</script>
