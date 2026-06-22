@@ -276,7 +276,6 @@ function updDday(){
   const m = wd.getMonth()+1, d2 = wd.getDate()
   document.getElementById('brand-date').textContent = wd.getFullYear()+'년 '+m+'월 '+d2+'일'
 }
-updDday()
 
 const STS = ['후보','검토중','확정','탈락']
 const CN  = {hall:'웨딩홀',studio:'스튜디오',makeup:'메이크업',dress:'드레스'}
@@ -382,6 +381,8 @@ if(!D.jwedding) D.jwedding={}
 if(!D.expenses) D.expenses=[]
 if(!D.tasks) D.tasks=[]
 if(!D.tl) D.tl=[]
+
+updDday()
 
 let cur='dashboard', filt='all', stab='list', cmpMode=false, cmpSet=new Set(), addCat=null
 
