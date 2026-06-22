@@ -767,6 +767,9 @@ function rJwedding(){
   const td=D.jwedding[TODAY_STR]||{p1:{done:false,url:''},p2:{done:false,url:''},p3:{done:false,url:''},comment:false,commentUrl:''}
   const ps=[td.p1||{done:false,url:''},td.p2||{done:false,url:''},td.p3||{done:false,url:''}]
 
+  // 오늘 날짜 표시용 (M-D 형식)
+  const todayLabel=(TODAY.getMonth()+1)+'-'+TODAY.getDate()
+
   // 오늘 활동 카드 3개
   const postCards=ps.map((p,i)=>{
     const done=p.done
@@ -774,7 +777,7 @@ function rJwedding(){
       ?'<input class="jw-url-input" placeholder="링크 (선택)" value="'+(p.url||'')+'" oninput="saveJwUrl(\'post\','+i+',this.value)"/>'
        +(p.url?'<a class="jw-url-link" href="'+p.url+'" target="_blank">↗ 열기</a>':'')
       :''
-    return'<div class="jw-card '+(done?'done':'')+'"><div class="jw-card-top"><div><div class="jw-card-label">'+labels[i]+'</div><div style="font-size:11px;color:var(--tm);margin-top:2px">오늘 작성했나요?</div></div><button class="jw-toggle" onclick="toggleJw(\'post\','+i+')" title="토글"></button></div>'+urlHtml+'</div>'
+    return'<div class="jw-card '+(done?'done':'')+'"><div class="jw-card-top"><div><div class="jw-card-label">'+labels[i]+'</div><div style="font-size:11px;color:var(--tm);margin-top:2px">'+todayLabel+'</div></div><button class="jw-toggle" onclick="toggleJw(\'post\','+i+')" title="토글"></button></div>'+urlHtml+'</div>'
   }).join('')
 
   const commentUrlHtml=td.comment
@@ -825,7 +828,7 @@ function rJwedding(){
     ${mkLink('points','사이트 적립 바로가기','⭐')}
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">${postCards}</div>
-  <div class="jw-card ${td.comment?'done':''}" style="margin-bottom:22px"><div class="jw-card-top"><div><div class="jw-card-label">댓글</div><div style="font-size:11px;color:var(--tm);margin-top:2px">오늘 댓글 작성했나요?</div></div><button class="jw-toggle" onclick="toggleJw('comment',0)" title="토글"></button></div>${commentUrlHtml}</div>
+  <div class="jw-card ${td.comment?'done':''}" style="margin-bottom:22px"><div class="jw-card-top"><div><div class="jw-card-label">댓글</div><div style="font-size:11px;color:var(--tm);margin-top:2px">${todayLabel}</div></div><button class="jw-toggle" onclick="toggleJw('comment',0)" title="토글"></button></div>${commentUrlHtml}</div>
   <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px">
     ${[0,1,2].map(i=>'<div class="sc"><div class="sl">'+labels[i]+'</div><div class="sv a">'+(i===0?p1cnt:i===1?p2cnt:p3cnt)+'</div><div class="sd">일</div></div>').join('')}
     <div class="sc"><div class="sl">댓글</div><div class="sv a">${cmtCnt}</div><div class="sd">일</div></div>
