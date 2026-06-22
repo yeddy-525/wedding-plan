@@ -487,12 +487,13 @@ let D = ld() || {
   },
   jwMemo:[],
   log:[],
-  settings:{weddingDate:'2027-02-14',budget:30000000,jwLabels:['글 1','글 2','글 3']}
+  settings:{weddingDate:'2027-02-14',budget:30000000,jwLabels:['글 1','글 2','글 3'],jwLinks:{cafe:'',points:''}}
 }
 
 // 마이그레이션
 if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
 if(!D.settings.jwLabels) D.settings.jwLabels=['글 1','글 2','글 3']
+if(!D.settings.jwLinks) D.settings.jwLinks={cafe:'',points:''}
 if(!D.jwedding) D.jwedding={}
 if(!D.expenses) D.expenses=[]
 if(!D.tasks) D.tasks=[]
@@ -745,7 +746,26 @@ function rExpense(){
 
 let calYear=TODAY.getFullYear(),calMonth=TODAY.getMonth()
 
+function saveJwLink(type,val){
+  D.settings.jwLinks[type]=val;sv()
+}
+
 function rJwedding(){
+  const links=D.settings.jwLinks||{cafe:'',points:''}
+  const mkLink=(key,label,icon)=>{
+    const url=links[key]||''
+    const btn=url
+      ?`<a href="${url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--a);color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;transition:opacity .1s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">${icon} 바로가기</a>`
+      :'<span style="font-size:11px;color:var(--tm)">링크를 입력하면 버튼이 생겨요</span>'
+    return`<div class="card" style="display:flex;align-items:center;gap:14px;padding:13px 16px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tm);margin-bottom:5px">${label}</div>
+        <input class="fi" style="font-size:11px;padding:6px 10px" placeholder="https://..." value="${url}" oninput="saveJwLink('${key}',this.value)" onblur="render()"/>
+      </div>
+      <div style="flex-shrink:0">${btn}</div>
+    </div>`
+  }
+
   const labels=D.settings.jwLabels||['글 1','글 2','글 3']
   const td=D.jwedding[TODAY_STR]||{p1:{done:false,url:''},p2:{done:false,url:''},p3:{done:false,url:''},comment:false,commentUrl:''}
   const ps=[td.p1||{done:false,url:''},td.p2||{done:false,url:''},td.p3||{done:false,url:''}]
@@ -803,7 +823,11 @@ function rJwedding(){
     ${m.content?'<div style="font-size:12px;color:var(--tm);margin-top:8px;line-height:1.6;white-space:pre-wrap">'+m.content+'</div>':''}
   </div>`).join('')
 
-  return`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">${postCards}</div>
+  return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+    ${mkLink('cafe','카페 바로가기','☕')}
+    ${mkLink('points','사이트 적립 바로가기','⭐')}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">${postCards}</div>
   <div class="jw-card ${td.comment?'done':''}" style="margin-bottom:22px"><div class="jw-card-top"><div><div class="jw-card-label">댓글</div><div style="font-size:11px;color:var(--tm);margin-top:2px">오늘 댓글 작성했나요?</div></div><button class="jw-toggle" onclick="toggleJw('comment',0)" title="토글"></button></div>${commentUrlHtml}</div>
   <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px">
     ${[0,1,2].map(i=>'<div class="sc"><div class="sl">'+labels[i]+'</div><div class="sv a">'+(i===0?p1cnt:i===1?p2cnt:p3cnt)+'</div><div class="sd">일</div></div>').join('')}
