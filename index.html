@@ -261,7 +261,7 @@ html,body{height:100%}
 
 <div class="layout">
   <aside class="sidebar" id="sidebar">
-    <div class="brand">
+    <div class="brand" onclick="go('dashboard')" style="cursor:pointer" title="대시보드로 이동">
       <div class="brand-name">✦ 우리의 결혼준비</div>
       <div class="brand-dday" id="dday">D-237</div>
       <div class="brand-date" id="brand-date">2027년 2월 14일</div>
@@ -486,6 +486,7 @@ let D = ld() || {
     '2026-06-20':{p1:{done:true,url:''},p2:{done:true,url:''},p3:{done:false,url:''},comment:false,commentUrl:''},
   },
   jwMemo:[],
+  log:[],
   settings:{weddingDate:'2027-02-14',budget:30000000,jwLabels:['글 1','글 2','글 3']}
 }
 
@@ -497,6 +498,7 @@ if(!D.expenses) D.expenses=[]
 if(!D.tasks) D.tasks=[]
 if(!D.tl) D.tl=[]
 if(!D.jwMemo) D.jwMemo=[]
+if(!D.log) D.log=[]
 D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
 // 구버전 jwedding 데이터 마이그레이션 (post → p1/p2/p3)
 Object.keys(D.jwedding).forEach(date=>{
@@ -519,6 +521,12 @@ function updDday(){
 updDday()
 
 let cur='dashboard',filt='all',stab='list',cmpMode=false,cmpSet=new Set(),addCat=null,editId=null
+
+const LOG_ICONS={vendor_add:'🔵',vendor_status_확정:'🟢',vendor_status_탈락:'🔴',vendor_status:'🔵',expense:'🟡',task_done:'🟢',tl_done:'🟢',task_add:'🔵',memo:'🔵'}
+function addLog(type,text,detail){
+  D.log.unshift({id:Date.now(),type,text,detail:detail||'',date:TODAY_STR})
+  if(D.log.length>30) D.log=D.log.slice(0,30)
+}
 
 function allV(cat){return D.vendors[cat]||[]}
 function flatV(){return Object.values(D.vendors).flat()}
@@ -617,11 +625,13 @@ function rDash(){
       </div>
       <div class="card" style="margin-top:11px">${tasks||'<div style="font-size:12px;color:var(--tm);padding:8px">할 일을 추가해보세요</div>'}</div>
     </div>
-    <div><div class="stit">최근 업데이트</div><div class="card">
-      <div class="ai"><div class="ad g"></div><div class="ab"><div class="an">이채원 메이크업 → 확정</div><div class="adet">친구 추천, 계약금 입금 완료</div></div><div class="at">어제</div></div>
-      <div class="ai"><div class="ad"></div><div class="ab"><div class="an">로맨틱 브라이드 → 검토중</div><div class="adet">1차 방문 완료</div></div><div class="at">2일 전</div></div>
-      <div class="ai"><div class="ad r"></div><div class="ab"><div class="an">아모리스 웨딩 → 탈락</div><div class="adet">규모가 작아 탈락</div></div><div class="at">3일 전</div></div>
-    </div></div>
+    <div><div class="stit">최근 활동</div><div class="card">${
+      D.log.slice(0,8).map(e=>{
+        const dot=e.type==='vendor_status_확정'||e.type==='task_done'||e.type==='tl_done'?'g':e.type==='vendor_status_탈락'?'r':''
+        const relDate=e.date===TODAY_STR?'오늘':e.date===new Date(TODAY-86400000).toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'})?'어제':e.date
+        return'<div class="ai"><div class="ad '+dot+'"></div><div class="ab"><div class="an">'+e.text+'</div>'+(e.detail?'<div class="adet">'+e.detail+'</div>':'')+'</div><div class="at">'+relDate+'</div></div>'
+      }).join('')||'<div style="font-size:12px;color:var(--tm);padding:4px">아직 활동 기록이 없어요</div>'
+    }</div></div>
   </div>`
 }
 
@@ -852,10 +862,16 @@ function clearCmp(){cmpSet.clear();cmpMode=false;updCF();render()}
 function cycSt(id){
   const v=flatV().find(v=>v.id===id);if(!v)return
   v.status=STS[(STS.indexOf(v.status)+1)%STS.length]
+  addLog('vendor_status_'+v.status, v.name+' → '+v.status)
   sv();updNC();render()
 }
 
-function toggleTask(id){const t=D.tasks.find(t=>t.id===id);if(t){t.dn=!t.dn;sv();render()}}
+function toggleTask(id){
+  const t=D.tasks.find(t=>t.id===id);if(!t)return
+  t.dn=!t.dn
+  if(t.dn) addLog('task_done',t.text+' 완료','이번 주 할 일')
+  sv();render()
+}
 function deleteTask(id){D.tasks=D.tasks.filter(t=>t.id!==id);sv();render()}
 
 function openAddTask(){
@@ -867,10 +883,18 @@ function openAddTask(){
 function submitAddTask(){
   const text=document.getElementById('task-text').value.trim();if(!text)return
   D.tasks.push({id:Date.now(),text,date:document.getElementById('task-date').value.trim(),dn:false})
+  addLog('task_add','할 일 추가: '+text)
   sv();closeModal();render()
 }
 
-function toggleTl(id){for(const m of D.tl){const t=m.tasks.find(t=>t.id===id);if(t){t.dn=!t.dn;sv();render();return}}}
+function toggleTl(id){
+  for(const m of D.tl){
+    const t=m.tasks.find(t=>t.id===id);if(!t)continue
+    t.dn=!t.dn
+    if(t.dn) addLog('tl_done',t.text+' 완료',m.mo)
+    sv();render();return
+  }
+}
 function deleteTlTask(id){for(const m of D.tl){const i=m.tasks.findIndex(t=>t.id===id);if(i>-1){m.tasks.splice(i,1);sv();render();return}}}
 
 function addTlTask(monthId){
@@ -938,9 +962,10 @@ function submitVendor(){
   const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim()}
   if(editId){
     const vs=D.vendors[addCat],i=vs.findIndex(v=>v.id===editId)
-    if(i>-1) vs[i]={...vs[i],...data}
+    if(i>-1){const prev=vs[i];vs[i]={...prev,...data};if(prev.status!==data.status) addLog('vendor_status_'+data.status,data.name+' → '+data.status,CN[addCat])}
   } else {
     D.vendors[addCat].push({id:Date.now(),...data})
+    addLog('vendor_add',data.name+' 추가',CN[addCat]+' · '+data.status)
   }
   sv();updNC();closeModal()
   document.getElementById('ps').textContent=allV(addCat).length+'개 후보'
@@ -963,7 +988,9 @@ function submitExpense(){
   const name=document.getElementById('en').value.trim()
   const amt=parseInt(document.getElementById('ea').value)
   if(!name||!amt)return
-  D.expenses.push({id:Date.now(),cat:document.getElementById('ec').value,name,amount:amt,date:document.getElementById('ed').value||TODAY_STR,note:document.getElementById('eno').value.trim()})
+  const cat=document.getElementById('ec').value
+  D.expenses.push({id:Date.now(),cat,name,amount:amt,date:document.getElementById('ed').value||TODAY_STR,note:document.getElementById('eno').value.trim()})
+  addLog('expense',name+' '+fp(amt),cat)
   sv();closeModal();document.getElementById('ps').textContent='지금까지 '+fp(totalSpent())+' 사용';render()
 }
 
