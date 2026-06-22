@@ -248,6 +248,7 @@ html,body{height:100%}
   .vg{grid-template-columns:1fr}
   .fr{grid-template-columns:1fr}
   .jw-today{grid-template-columns:1fr}
+  .jw-stats{grid-template-columns:repeat(3,1fr)!important}
   .set-input{width:140px}
 }
 @media(max-width:480px){
@@ -481,19 +482,33 @@ let D = ld() || {
     {id:9004,cat:'기타',name:'웨딩박람회 입장',amount:20000,date:'2026-06-10',note:''},
   ],
   jwedding:{
-    '2026-06-21':{post:true,postUrl:'',comment:true,commentUrl:''},
-    '2026-06-20':{post:true,postUrl:'',comment:false,commentUrl:''},
+    '2026-06-21':{p1:{done:true,url:''},p2:{done:false,url:''},p3:{done:false,url:''},comment:true,commentUrl:''},
+    '2026-06-20':{p1:{done:true,url:''},p2:{done:true,url:''},p3:{done:false,url:''},comment:false,commentUrl:''},
   },
-  settings:{weddingDate:'2027-02-14',budget:30000000}
+  jwMemo:[],
+  settings:{weddingDate:'2027-02-14',budget:30000000,jwLabels:['글 1','글 2','글 3']}
 }
 
 // 마이그레이션
 if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
+if(!D.settings.jwLabels) D.settings.jwLabels=['글 1','글 2','글 3']
 if(!D.jwedding) D.jwedding={}
 if(!D.expenses) D.expenses=[]
 if(!D.tasks) D.tasks=[]
 if(!D.tl) D.tl=[]
+if(!D.jwMemo) D.jwMemo=[]
 D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
+// 구버전 jwedding 데이터 마이그레이션 (post → p1/p2/p3)
+Object.keys(D.jwedding).forEach(date=>{
+  const d=D.jwedding[date]
+  if(d.post!==undefined&&!d.p1){
+    D.jwedding[date]={p1:{done:d.post,url:d.postUrl||''},p2:{done:false,url:''},p3:{done:false,url:''},comment:d.comment||false,commentUrl:d.commentUrl||''}
+  }
+  if(!d.p1) d.p1={done:false,url:''}
+  if(!d.p2) d.p2={done:false,url:''}
+  if(!d.p3) d.p3={done:false,url:''}
+  if(d.comment===undefined) d.comment=false
+})
 
 function updDday(){
   const wd=new Date(D.settings.weddingDate)
@@ -721,13 +736,34 @@ function rExpense(){
 let calYear=TODAY.getFullYear(),calMonth=TODAY.getMonth()
 
 function rJwedding(){
-  const todayData=D.jwedding[TODAY_STR]||{post:false,postUrl:'',comment:false,commentUrl:''}
-  const postDone=todayData.post,commentDone=todayData.comment
-  const allDays=Object.entries(D.jwedding)
-  const postCount=allDays.filter(([,d])=>d.post).length
-  const commentCount=allDays.filter(([,d])=>d.comment).length
-  const bothCount=allDays.filter(([,d])=>d.post&&d.comment).length
+  const labels=D.settings.jwLabels||['글 1','글 2','글 3']
+  const td=D.jwedding[TODAY_STR]||{p1:{done:false,url:''},p2:{done:false,url:''},p3:{done:false,url:''},comment:false,commentUrl:''}
+  const ps=[td.p1||{done:false,url:''},td.p2||{done:false,url:''},td.p3||{done:false,url:''}]
 
+  // 오늘 활동 카드 3개
+  const postCards=ps.map((p,i)=>{
+    const done=p.done
+    const urlHtml=done
+      ?'<input class="jw-url-input" placeholder="링크 (선택)" value="'+(p.url||'')+'" oninput="saveJwUrl(\'post\','+i+',this.value)"/>'
+       +(p.url?'<a class="jw-url-link" href="'+p.url+'" target="_blank">↗ 열기</a>':'')
+      :''
+    return'<div class="jw-card '+(done?'done':'')+'"><div class="jw-card-top"><div><div class="jw-card-label">'+labels[i]+'</div><div style="font-size:11px;color:var(--tm);margin-top:2px">오늘 작성했나요?</div></div><button class="jw-toggle" onclick="toggleJw(\'post\','+i+')" title="토글"></button></div>'+urlHtml+'</div>'
+  }).join('')
+
+  const commentUrlHtml=td.comment
+    ?'<input class="jw-url-input" placeholder="댓글 링크 (선택)" value="'+(td.commentUrl||'')+'" oninput="saveJwUrl(\'comment\',0,this.value)"/>'
+     +(td.commentUrl?'<a class="jw-url-link" href="'+td.commentUrl+'" target="_blank">↗ 열기</a>':'')
+    :''
+
+  // 통계 계산
+  const allDays=Object.values(D.jwedding)
+  const p1cnt=allDays.filter(d=>d.p1&&d.p1.done).length
+  const p2cnt=allDays.filter(d=>d.p2&&d.p2.done).length
+  const p3cnt=allDays.filter(d=>d.p3&&d.p3.done).length
+  const cmtCnt=allDays.filter(d=>d.comment).length
+  const allCnt=allDays.filter(d=>d.p1&&d.p1.done&&d.p2&&d.p2.done&&d.p3&&d.p3.done&&d.comment).length
+
+  // 달력
   const year=calYear,month=calMonth
   const firstDay=new Date(year,month,1).getDay()
   const daysInMonth=new Date(year,month+1,0).getDate()
@@ -738,22 +774,40 @@ function rJwedding(){
     const ds=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0')
     const data=D.jwedding[ds]
     const isToday=ds===TODAY_STR
-    const hasPost=data&&data.post,hasComment=data&&data.comment
-    let cls='cal-cell'
-    if(isToday) cls+=' today'
-    if(hasPost&&hasComment) cls+=' both'
-    else if(hasPost) cls+=' post-only'
-    else if(hasComment) cls+=' comment-only'
-    const dots=(hasPost||hasComment)?'<div class="cal-dots">'+(hasPost?'<div class="cal-dot"></div>':'')+(hasComment?'<div class="cal-dot" style="opacity:.5"></div>':'')+'</div>':''
+    const doneCount=data?[data.p1,data.p2,data.p3].filter(p=>p&&p.done).length+(data.comment?1:0):0
+    const total=4
+    let cls='cal-cell'+(isToday?' today':'')
+    if(doneCount===total) cls+=' both'
+    else if(doneCount>=2) cls+=' post-only'
+    else if(doneCount===1) cls+=' comment-only'
+    const dots=doneCount>0?'<div class="cal-dots">'+Array.from({length:Math.min(doneCount,4)},()=>'<div class="cal-dot"></div>').join('')+'</div>':''
     cells+='<div class="'+cls+'">'+d+dots+'</div>'
   }
 
-  const postUrlHtml=postDone?'<input class="jw-url-input" id="jw-post-url" placeholder="글 링크 (선택)" value="'+(todayData.postUrl||'')+'" oninput="saveJwUrl(\'post\',this.value)"/>'+(todayData.postUrl?'<a class="jw-url-link" href="'+todayData.postUrl+'" target="_blank">↗ 링크 열기</a>':''):''
-  const commentUrlHtml=commentDone?'<input class="jw-url-input" id="jw-comment-url" placeholder="댓글 링크 (선택)" value="'+(todayData.commentUrl||'')+'" oninput="saveJwUrl(\'comment\',this.value)"/>'+(todayData.commentUrl?'<a class="jw-url-link" href="'+todayData.commentUrl+'" target="_blank">↗ 링크 열기</a>':''):''
+  // 메모 목록
+  const memos=D.jwMemo.map(m=>`<div class="card" style="margin-bottom:10px;cursor:pointer" onclick="editMemo(${m.id})">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div style="font-size:13px;font-weight:600;color:var(--t);flex:1">${m.title}</div>
+      <span style="font-size:10px;color:var(--tm);white-space:nowrap;flex-shrink:0">${m.date}</span>
+    </div>
+    ${m.content?'<div style="font-size:12px;color:var(--tm);margin-top:8px;line-height:1.6;white-space:pre-wrap">'+m.content+'</div>':''}
+  </div>`).join('')
 
-  return'<div class="jw-today"><div class="jw-card '+(postDone?'done':'')+'"><div class="jw-card-top"><div><div class="jw-card-label">오늘 글 작성</div><div style="font-size:11px;color:var(--tm);margin-top:2px">제이웨딩에 글을 썼나요?</div></div><button class="jw-toggle" onclick="toggleJw(\'post\')" title="토글"></button></div>'+postUrlHtml+'</div><div class="jw-card '+(commentDone?'done':'')+'"><div class="jw-card-top"><div><div class="jw-card-label">오늘 댓글 작성</div><div style="font-size:11px;color:var(--tm);margin-top:2px">제이웨딩에 댓글을 썼나요?</div></div><button class="jw-toggle" onclick="toggleJw(\'comment\')" title="토글"></button></div>'+commentUrlHtml+'</div></div>'
-  +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px"><div class="sc"><div class="sl">글 작성일</div><div class="sv a">'+postCount+'</div><div class="sd">일</div></div><div class="sc"><div class="sl">댓글 작성일</div><div class="sv a">'+commentCount+'</div><div class="sd">일</div></div><div class="sc"><div class="sl">둘 다 완료</div><div class="sv g">'+bothCount+'</div><div class="sd">일</div></div></div>'
-  +'<div class="card"><div class="cal-nav"><button class="cal-nav-btn" onclick="calMove(-1)">‹</button><div class="cal-month-label">'+(month+1)+'월 '+year+'</div><button class="cal-nav-btn" onclick="calMove(1)">›</button></div><div class="cal-head">'+dayHeaders+'</div><div class="cal-grid">'+cells+'</div><div style="display:flex;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--b)"><span style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:var(--a);display:inline-block"></span>글+댓글</span><span style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(74,143,224,.2);display:inline-block"></span>글만</span><span style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(74,143,224,.08);display:inline-block"></span>댓글만</span></div></div>'
+  return`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">${postCards}</div>
+  <div class="jw-card ${td.comment?'done':''}" style="margin-bottom:22px"><div class="jw-card-top"><div><div class="jw-card-label">댓글</div><div style="font-size:11px;color:var(--tm);margin-top:2px">오늘 댓글 작성했나요?</div></div><button class="jw-toggle" onclick="toggleJw('comment',0)" title="토글"></button></div>${commentUrlHtml}</div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px">
+    ${[0,1,2].map(i=>'<div class="sc"><div class="sl">'+labels[i]+'</div><div class="sv a">'+(i===0?p1cnt:i===1?p2cnt:p3cnt)+'</div><div class="sd">일</div></div>').join('')}
+    <div class="sc"><div class="sl">댓글</div><div class="sv a">${cmtCnt}</div><div class="sd">일</div></div>
+    <div class="sc"><div class="sl">전체 완료</div><div class="sv g">${allCnt}</div><div class="sd">일</div></div>
+  </div>
+  <div class="card" style="margin-bottom:22px"><div class="cal-nav"><button class="cal-nav-btn" onclick="calMove(-1)">‹</button><div class="cal-month-label">${month+1}월 ${year}</div><button class="cal-nav-btn" onclick="calMove(1)">›</button></div><div class="cal-head">${dayHeaders}</div><div class="cal-grid">${cells}</div><div style="display:flex;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--b)"><span style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:var(--a);display:inline-block"></span>4개 완료</span><span style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(74,143,224,.2);display:inline-block"></span>2-3개</span><span style="font-size:11px;color:var(--tm);display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:3px;background:rgba(74,143,224,.08);display:inline-block"></span>1개</span></div></div>
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="stit" style="margin:0">자료 및 메모</div>
+      <button class="btn sm p" onclick="openAddMemo()">+ 메모 추가</button>
+    </div>
+    ${memos||'<div class="card" style="text-align:center;padding:28px;color:var(--tm);font-size:13px">아직 메모가 없어요. 링크, 팁, 정보 등 자유롭게 기록해보세요.</div>'}
+  </div>`
 }
 
 function rSettings(){
@@ -762,6 +816,7 @@ function rSettings(){
     :'<span style="color:var(--tm);font-size:11px">미설정</span>'
   return`<div class="set-section"><div class="set-title">기본 정보</div><div class="set-row"><div><div class="set-row-label">결혼 예정일</div><div class="set-row-desc">D-day 계산 및 타임라인 하이라이트에 사용돼요</div></div><input class="set-input" type="date" id="set-date" value="${D.settings.weddingDate}"/></div></div>
   <div class="set-section"><div class="set-title">예산</div><div class="set-row"><div><div class="set-row-label">총 예산 상한선</div><div class="set-row-desc">지출 페이지에서 남은 예산을 보여줘요</div></div><input class="set-input" type="number" id="set-budget" value="${D.settings.budget}" placeholder="30000000"/></div></div>
+  <div class="set-section"><div class="set-title">제이웨딩 글 이름</div><div class="set-row" style="gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:120px"><div class="set-row-label">글 항목 이름</div><div class="set-row-desc">각 글의 이름을 지정해요</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><input class="set-input" id="jw-l0" style="width:90px;text-align:center" value="${D.settings.jwLabels[0]}"/><input class="set-input" id="jw-l1" style="width:90px;text-align:center" value="${D.settings.jwLabels[1]}"/><input class="set-input" id="jw-l2" style="width:90px;text-align:center" value="${D.settings.jwLabels[2]}"/></div></div></div>
   <div class="set-section"><div class="set-title" style="display:flex;align-items:center;gap:8px">구글 시트 연동 ${syncStatus}</div>
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:10px">
       <div><div class="set-row-label">GAS 웹 앱 URL</div><div class="set-row-desc">구글 앱스 스크립트에서 배포한 웹 앱 URL을 입력하세요 — 두 기기 모두 입력해야 공유돼요</div></div>
@@ -917,15 +972,57 @@ function delExpense(id){
   D.expenses=D.expenses.filter(e=>e.id!==id);sv();render()
 }
 
-function toggleJw(type){
-  if(!D.jwedding[TODAY_STR]) D.jwedding[TODAY_STR]={post:false,postUrl:'',comment:false,commentUrl:''}
-  D.jwedding[TODAY_STR][type]=!D.jwedding[TODAY_STR][type]
+function ensureJwDay(){
+  if(!D.jwedding[TODAY_STR]) D.jwedding[TODAY_STR]={p1:{done:false,url:''},p2:{done:false,url:''},p3:{done:false,url:''},comment:false,commentUrl:''}
+  const d=D.jwedding[TODAY_STR]
+  if(!d.p1) d.p1={done:false,url:''}
+  if(!d.p2) d.p2={done:false,url:''}
+  if(!d.p3) d.p3={done:false,url:''}
+}
+
+function toggleJw(type,idx){
+  ensureJwDay();const d=D.jwedding[TODAY_STR]
+  if(type==='post') d['p'+(idx+1)].done=!d['p'+(idx+1)].done
+  else d.comment=!d.comment
   sv();render()
 }
 
-function saveJwUrl(type,val){
-  if(!D.jwedding[TODAY_STR]) D.jwedding[TODAY_STR]={post:false,postUrl:'',comment:false,commentUrl:''}
-  D.jwedding[TODAY_STR][type+'Url']=val;sv()
+function saveJwUrl(type,idx,val){
+  ensureJwDay();const d=D.jwedding[TODAY_STR]
+  if(type==='post') d['p'+(idx+1)].url=val
+  else d.commentUrl=val
+  sv()
+}
+
+function openAddMemo(){
+  document.getElementById('mbox').innerHTML='<div class="mtit">메모 추가</div><div class="fg"><label class="fl">제목</label><input class="fi" id="memo-title" placeholder="예: 포인트 적립 꿀팁"/></div><div class="fg"><label class="fl">내용</label><textarea class="fi" id="memo-content" rows="6" placeholder="링크, 정보, 메모 등 자유롭게 입력하세요" style="resize:vertical"></textarea></div><div class="ma"><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitMemo()">저장</button></div>'
+  document.getElementById('modal').style.display='flex'
+  setTimeout(()=>document.getElementById('memo-title').focus(),50)
+}
+
+function submitMemo(){
+  const title=document.getElementById('memo-title').value.trim()
+  const content=document.getElementById('memo-content').value.trim()
+  if(!title&&!content)return
+  D.jwMemo.unshift({id:Date.now(),title:title||'(제목 없음)',content,date:TODAY_STR})
+  sv();closeModal();render()
+}
+
+function editMemo(id){
+  const m=D.jwMemo.find(m=>m.id===id);if(!m)return
+  document.getElementById('mbox').innerHTML='<div class="mtit">메모 편집</div><div class="fg"><label class="fl">제목</label><input class="fi" id="memo-title" value="'+m.title+'"/></div><div class="fg"><label class="fl">내용</label><textarea class="fi" id="memo-content" rows="6" style="resize:vertical">'+m.content+'</textarea></div><div class="ma"><button class="btn danger" onclick="deleteMemo('+id+')">삭제</button><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="saveMemoEdit('+id+')">저장</button></div>'
+  document.getElementById('modal').style.display='flex'
+}
+
+function saveMemoEdit(id){
+  const m=D.jwMemo.find(m=>m.id===id);if(!m)return
+  m.title=document.getElementById('memo-title').value.trim()||'(제목 없음)'
+  m.content=document.getElementById('memo-content').value.trim()
+  sv();closeModal();render()
+}
+
+function deleteMemo(id){
+  D.jwMemo=D.jwMemo.filter(m=>m.id!==id);sv();closeModal();render()
 }
 
 function calMove(dir){
@@ -938,6 +1035,8 @@ function calMove(dir){
 function saveSettings(){
   D.settings.weddingDate=document.getElementById('set-date').value
   D.settings.budget=parseInt(document.getElementById('set-budget').value)||0
+  const l0=document.getElementById('jw-l0'),l1=document.getElementById('jw-l1'),l2=document.getElementById('jw-l2')
+  if(l0&&l1&&l2) D.settings.jwLabels=[l0.value.trim()||'글 1',l1.value.trim()||'글 2',l2.value.trim()||'글 3']
   const newUrl=document.getElementById('set-gas-url').value.trim()
   if(newUrl!==GAS_URL){
     GAS_URL=newUrl
