@@ -292,6 +292,7 @@ function ld(){try{return JSON.parse(localStorage.getItem('wd'))||null}catch{retu
 function sv(){try{localStorage.setItem('wd',JSON.stringify(D))}catch{}}
 
 let D = ld() || {
+  _v:2,
   vendors:{
     hall:[
       {id:1,name:'더시그니처 웨딩홀',price:3500000,deposit:500000,loc:'강남구',cap:'250명',status:'검토중',tags:['주차 100대','야외 정원','뷔페 별도'],note:'주말 할인 없음, 평일 10% 할인. 뷔페 1인 8만원 별도.'},
@@ -374,6 +375,13 @@ let D = ld() || {
     budget:30000000,
   }
 }
+
+// 구버전 localStorage 데이터 마이그레이션
+if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
+if(!D.jwedding) D.jwedding={}
+if(!D.expenses) D.expenses=[]
+if(!D.tasks) D.tasks=[]
+if(!D.tl) D.tl=[]
 
 let cur='dashboard', filt='all', stab='list', cmpMode=false, cmpSet=new Set(), addCat=null
 
