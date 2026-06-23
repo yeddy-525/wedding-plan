@@ -493,6 +493,8 @@ let D = ld() || {
 if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
 if(!D.settings.jwLabels) D.settings.jwLabels=['글 1','글 2','글 3']
 if(!D.settings.jwLinks) D.settings.jwLinks={cafe:'',points:''}
+if(!D.vendors) D.vendors={hall:[],studio:[],makeup:[],dress:[],etc:[]}
+if(!D.vendors.etc) D.vendors.etc=[]
 if(!D.jwedding) D.jwedding={}
 if(!D.expenses) D.expenses=[]
 if(!D.tasks) D.tasks=[]
@@ -550,7 +552,7 @@ function go(p){
   document.querySelectorAll('.ni').forEach(e=>e.classList.toggle('on',e.dataset.p===p))
   closeSidebar()
   const expTotal=D.expenses.reduce((s,e)=>s+e.amount,0)
-  const jwDays=Object.values(D.jwedding),jwPosts=jwDays.filter(d=>d.post).length
+  const jwDays=Object.values(D.jwedding),jwPosts=jwDays.filter(d=>d.p1&&d.p1.done||d.p2&&d.p2.done||d.p3&&d.p3.done).length
   const titles={
     dashboard:['대시보드','전체 준비 현황'],
     hall:['웨딩홀',allV('hall').length+'개 후보'],
