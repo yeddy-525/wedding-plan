@@ -390,6 +390,8 @@ function applyRemote(remote){
 
 async function loadFromGAS(force){
   if(!GAS_URL){setSyncStatus('');return}
+  // 로컬 데이터 있고 강제 아님 → 로컬 유지 (GAS 처리 지연으로 덮어씌우는 거 방지)
+  if(!force && ld()){setSyncStatus('ok');return}
   setSyncStatus('loading')
   try{
     const res=await fetch(GAS_URL+'?t='+Date.now())
