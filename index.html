@@ -427,29 +427,8 @@ async function testGAS(){
 }
 
 let D = ld() || {
-  vendors:{
-    hall:[
-      {id:1,name:'더시그니처 웨딩홀',price:3500000,deposit:500000,loc:'강남구',cap:'250명',status:'검토중',tags:['주차 100대','야외 정원','뷔페 별도'],note:'주말 할인 없음, 평일 10% 할인. 뷔페 1인 8만원 별도.'},
-      {id:2,name:'그랜드 인터컨티넨탈',price:5200000,deposit:1000000,loc:'삼성동',cap:'300명',status:'후보',tags:['호텔 웨딩','뷔페 포함','발레파킹'],note:'JE 추천. 음식 후기 최고. 가격 부담됨.'},
-      {id:3,name:'아모리스 웨딩',price:2800000,deposit:300000,loc:'마포구',cap:'180명',status:'탈락',tags:['스몰 웨딩','내추럴 인테리어'],note:'분위기 좋은데 규모가 작아서 탈락.'},
-    ],
-    studio:[
-      {id:4,name:'앤드스튜디오',price:1600000,deposit:200000,loc:'성수동',cap:null,status:'후보',tags:['야외 로케','내추럴 보정','원본 파일'],note:'인스타 감성 너무 좋음. 야외 추가비 있음.'},
-      {id:5,name:'아뜰리에 화이트',price:2400000,deposit:300000,loc:'청담동',cap:null,status:'검토중',tags:['스튜디오 전용','드레스샵 제휴'],note:'로맨틱 브라이드 연계 15% 할인. 견적 재확인 필요.'},
-    ],
-    makeup:[
-      {id:6,name:'이채원 메이크업',price:800000,deposit:100000,loc:'강남구',cap:null,status:'확정',tags:['웨딩 전문','자연스러운 연출','트라이얼 포함'],note:'친구 결혼식에서 봤는데 진짜 예뻤음. 계약금 입금 완료.'},
-    ],
-    dress:[
-      {id:7,name:'로맨틱 브라이드',price:3200000,deposit:500000,loc:'청담동',cap:null,status:'검토중',tags:['A라인','볼룸','맞춤 제작'],note:'1차 방문 완료. A라인 너무 예뻤음. 다음 주 2차 방문 예약.'},
-      {id:8,name:'엘르 브라이덜',price:1800000,deposit:200000,loc:'압구정',cap:null,status:'후보',tags:['미니멀','슬림핏','대여 가능'],note:'홈페이지 보고 마음에 들어서 추가.'},
-    ],
-  },
-  tasks:[
-    {id:1,text:'로맨틱 브라이드 2차 방문 및 피팅',date:'6/25',dn:false},
-    {id:2,text:'아뜰리에 화이트 견적서 재확인',date:'6/27',dn:false},
-    {id:3,text:'더시그니처 주말 예약 가능 여부 문의',date:'6/28',dn:false},
-  ],
+  vendors:{hall:[],studio:[],makeup:[],dress:[]},
+  tasks:[],
   tl:[
     {id:1,mo:'결혼 12개월 전',mb:12,tasks:[
       {id:101,text:'결혼 날짜 및 장소 유형 결정',cat:'전체',dn:true},
@@ -492,12 +471,7 @@ let D = ld() || {
       {id:803,text:'혼인신고 서류 준비',cat:'전체',dn:false},
     ]},
   ],
-  expenses:[
-    {id:9001,cat:'메이크업',name:'이채원 메이크업 계약금',amount:100000,date:'2026-06-21',note:'잔금 70만원 당일 결제'},
-    {id:9002,cat:'드레스',name:'로맨틱 브라이드 방문 예약금',amount:50000,date:'2026-06-19',note:'방문 후 환불 가능'},
-    {id:9003,cat:'예물',name:'예물 반지 계약금',amount:500000,date:'2026-06-15',note:'판도라 잠실점'},
-    {id:9004,cat:'기타',name:'웨딩박람회 입장',amount:20000,date:'2026-06-10',note:''},
-  ],
+  expenses:[],
   jwedding:{},
   jwMemo:[],
   log:[],
@@ -1125,11 +1099,21 @@ function saveSettings(){
   const l0=document.getElementById('jw-l0'),l1=document.getElementById('jw-l1'),l2=document.getElementById('jw-l2')
   if(l0&&l1&&l2) D.settings.jwLabels=[l0.value.trim()||'글 1',l1.value.trim()||'글 2',l2.value.trim()||'글 3']
   const newUrl=document.getElementById('set-gas-url').value.trim()
+  const urlJustSet=newUrl&&newUrl!==GAS_URL
   if(newUrl!==GAS_URL){
     GAS_URL=newUrl
     localStorage.setItem('gas_url',GAS_URL)
   }
-  sv();updDday();alert('저장됐어요!'+(GAS_URL?'\n구글 시트에도 동기화 중이에요.':''))
+  updDday()
+  if(urlJustSet){
+    // GAS URL 새로 입력 시: 로컬에만 설정 저장하고 GAS 데이터를 먼저 불러옴
+    // (sv()를 바로 호출하면 현재 기기 데이터가 GAS를 덮어씌울 수 있음)
+    try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
+    alert('저장됐어요!\n구글 시트에서 기존 데이터를 불러올게요.')
+    loadFromGAS()
+  } else {
+    sv();alert('저장됐어요!'+(GAS_URL?'\n구글 시트에도 동기화 중이에요.':''))
+  }
 }
 
 function closeModal(){document.getElementById('modal').style.display='none'}
