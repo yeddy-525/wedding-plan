@@ -264,6 +264,8 @@ html,body{height:100%}
 @media(hover:none){
   .edit-btn,.tdel,.tl-del,.exp-del,.exp-edit{opacity:1}
 }
+.jw-toggle.on{background:var(--a)}
+.jw-toggle.on::after{left:19px}
 @media(prefers-reduced-motion:reduce){.pc{animation:none}.vc,.ni,.btn,.chip,.tlt,.ti{transition:none}}
 </style>
 
@@ -483,6 +485,7 @@ let D = ld() || {
   jwedding:{},
   jwMemo:[],
   notes:[],
+  monthly:{},
   log:[],
   settings:{weddingDate:'2027-02-14',budget:30000000,jwLabels:['글 1','글 2','글 3'],jwLinks:{cafe:'',points:''}}
 }
@@ -497,6 +500,7 @@ if(!D.tasks) D.tasks=[]
 if(!D.tl) D.tl=[]
 if(!D.jwMemo) D.jwMemo=[]
 if(!D.notes) D.notes=[]
+if(!D.monthly) D.monthly={}
 if(!D.log) D.log=[]
 D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
 // 구버전 jwedding 데이터 마이그레이션 (post → p1/p2/p3)
@@ -762,6 +766,35 @@ function rExpense(){
 }
 
 let calYear=TODAY.getFullYear(),calMonth=TODAY.getMonth()
+let mlyYear=TODAY.getFullYear(),mlyMonth=TODAY.getMonth()
+
+function mlyMove(dir){
+  mlyMonth+=dir
+  if(mlyMonth<0){mlyMonth=11;mlyYear--}
+  if(mlyMonth>11){mlyMonth=0;mlyYear++}
+  render()
+}
+
+function ensureMonthly(key){
+  if(!D.monthly) D.monthly={}
+  if(!D.monthly[key]) D.monthly[key]={blog:Array.from({length:5},()=>({done:false,url:''})),insta:Array.from({length:5},()=>({done:false,url:''}))}
+  ;['blog','insta'].forEach(t=>{
+    if(!D.monthly[key][t]) D.monthly[key][t]=Array.from({length:5},()=>({done:false,url:''}))
+    while(D.monthly[key][t].length<5) D.monthly[key][t].push({done:false,url:''})
+  })
+}
+
+function toggleMonthly(key,type,idx){
+  ensureMonthly(key)
+  D.monthly[key][type][idx].done=!D.monthly[key][type][idx].done
+  sv();render()
+}
+
+function saveMonthlyUrl(key,type,idx,val){
+  ensureMonthly(key)
+  D.monthly[key][type][idx].url=val
+  sv()
+}
 
 function saveJwLink(type,val){
   D.settings.jwLinks[type]=val;sv()
@@ -849,6 +882,34 @@ function rJwedding(){
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">${postCards}</div>
   <div class="jw-card ${td.comment?'done':''}" style="margin-bottom:22px"><div class="jw-card-top"><div><div class="jw-card-label">댓글</div><div style="font-size:11px;color:var(--tm);margin-top:2px">${todayLabel}</div></div><button class="jw-toggle" onclick="toggleJw('comment',0)" title="토글"></button></div>${commentUrlHtml}</div>
+  ${(()=>{
+    const mlyKey=mlyYear+'-'+String(mlyMonth+1).padStart(2,'0')
+    const mlyLabel=mlyYear+'년 '+(mlyMonth+1)+'월'
+    const md=D.monthly&&D.monthly[mlyKey]?D.monthly[mlyKey]:{blog:Array.from({length:5},()=>({done:false,url:''})),insta:Array.from({length:5},()=>({done:false,url:''}))}
+    const mkCol=(type,label)=>{
+      const items=(md[type]||[]).concat(Array.from({length:5},()=>({done:false,url:''}))).slice(0,5)
+      const cnt=items.filter(i=>i.done).length
+      const rows=items.map((item,idx)=>{
+        const on=item.done
+        return'<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--b)">'
+          +'<span style="font-size:10px;color:var(--tm);width:22px;flex-shrink:0">#'+(idx+1)+'</span>'
+          +'<div style="flex:1;min-width:0">'
+          +(on?'<input class="jw-url-input" style="margin-top:0;font-size:11px;padding:5px 8px" placeholder="링크 (선택)" value="'+(item.url||'')+'" oninput="saveMonthlyUrl(\''+mlyKey+'\',\''+type+'\','+idx+',this.value)"/>':'<span style="font-size:11px;color:var(--tm)">미완료</span>')
+          +'</div>'
+          +(on&&item.url?'<a href="'+item.url+'" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--a);text-decoration:none;flex-shrink:0">↗</a>':'')
+          +'<button class="jw-toggle '+(on?'on':'')+'" onclick="toggleMonthly(\''+mlyKey+'\',\''+type+'\','+idx+')" style="flex-shrink:0"></button>'
+          +'</div>'
+      }).join('')
+      return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12px;font-weight:600">'+label+'</div><div style="font-size:11px;color:'+(cnt===5?'var(--ok)':'var(--tm)')+'">'+cnt+'/5</div></div>'+rows+'</div>'
+    }
+    return'<div style="margin-bottom:22px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+      +'<div class="stit" style="margin:0">블로그 & 인스타 월간</div>'
+      +'<div style="display:flex;align-items:center;gap:8px"><button class="cal-nav-btn" onclick="mlyMove(-1)">‹</button><span style="font-size:13px;font-family:\'Palatino Linotype\',Palatino,Georgia,serif">'+mlyLabel+'</span><button class="cal-nav-btn" onclick="mlyMove(1)">›</button></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+mkCol('blog','블로그')+mkCol('insta','인스타')+'</div>'
+      +'</div>'
+  })()}
   <div class="jw-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px">
     ${[0,1,2].map(i=>'<div class="sc"><div class="sl">'+labels[i]+'</div><div class="sv a">'+(i===0?p1cnt:i===1?p2cnt:p3cnt)+'</div><div class="sd">일</div></div>').join('')}
     <div class="sc"><div class="sl">댓글</div><div class="sv a">${cmtCnt}</div><div class="sd">일</div></div>

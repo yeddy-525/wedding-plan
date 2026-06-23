@@ -13,6 +13,7 @@ const SH = {
   JWEDDING : 'JWedding',
   JWMEMO   : 'JWedding_Memo',
   NOTES    : 'Notes',
+  MONTHLY  : 'Monthly',
   LOG      : 'Log'
 }
 
@@ -30,6 +31,7 @@ function doGet(e) {
       jwedding: readJwedding(ss),
       jwMemo  : readRows(ss, SH.JWMEMO,   ['id','title','content','date']),
       notes   : readRows(ss, SH.NOTES,    ['id','title','content','link','date']),
+      monthly : readMonthly(ss),
       log     : readRows(ss, SH.LOG,      ['id','type','text','detail','date']),
       settings: cfg.settings,
       _savedAt: cfg.savedAt
@@ -54,6 +56,7 @@ function doPost(e) {
     writeJwedding(ss, D.jwedding || {})
     writeRows    (ss, SH.JWMEMO,   D.jwMemo   || [], ['id','title','content','date'])
     writeRows    (ss, SH.NOTES,    D.notes    || [], ['id','title','content','link','date'])
+    writeMonthly (ss, D.monthly   || {})
     writeRows    (ss, SH.LOG,      (D.log||[]).slice(0,50), ['id','type','text','detail','date'])
     writeSettings(ss, D.settings  || {}, D._savedAt || 0)
 
@@ -223,6 +226,44 @@ function writeJwedding(ss, jwedding) {
   ])
   if (rows.length > 0)
     sh.getRange(2, 1, rows.length, JW_FIELDS.length).setValues(rows)
+}
+
+// ── 블로그/인스타 월간 체크 ───────────────────────────────────────────────
+
+const MLY_FIELDS = ['month','type','idx','done','url']
+
+function readMonthly(ss) {
+  const sh = ss.getSheetByName(SH.MONTHLY)
+  const result = {}
+  if (!sh || sh.getLastRow() < 2) return result
+  sh.getRange(2, 1, sh.getLastRow() - 1, MLY_FIELDS.length).getValues()
+    .filter(r => r[0]).forEach(r => {
+      const [month, type, idx, done, url] = r
+      if (!result[month]) result[month] = {
+        blog : Array.from({length:5}, () => ({done:false, url:''})),
+        insta: Array.from({length:5}, () => ({done:false, url:''}))
+      }
+      if (result[month][type] && idx >= 0 && idx < 5) {
+        result[month][type][idx] = {done: done===true||done==='true', url: url||''}
+      }
+    })
+  return result
+}
+
+function writeMonthly(ss, monthly) {
+  const sh = getOrCreate(ss, SH.MONTHLY, MLY_FIELDS)
+  if (sh.getLastRow() > 1)
+    sh.getRange(2, 1, sh.getLastRow() - 1, MLY_FIELDS.length).clearContent()
+  const rows = []
+  Object.entries(monthly).forEach(([month, data]) => {
+    ;['blog','insta'].forEach(type => {
+      (data[type] || []).forEach((item, idx) => {
+        rows.push([month, type, idx, item.done||false, item.url||''])
+      })
+    })
+  })
+  if (rows.length > 0)
+    sh.getRange(2, 1, rows.length, MLY_FIELDS.length).setValues(rows)
 }
 
 // ── 설정 ──────────────────────────────────────────────────────────────────
