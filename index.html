@@ -384,6 +384,8 @@ function applyRemote(remote){
   if(!D.tasks) D.tasks=[]
   if(!D.tl) D.tl=[]
   if(!D.jwMemo) D.jwMemo=[]
+  if(!D.notes) D.notes=[]
+  if(!D.monthly) D.monthly={}
   if(!D.log) D.log=[]
   D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
   try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
@@ -398,14 +400,13 @@ async function loadFromGAS(force){
     const text=await res.text()
     const remote=JSON.parse(text)
     if(remote&&remote.vendors){
-      const hasData=remote._savedAt>0||Object.values(remote.vendors).some(v=>v.length>0)
-      if(force||hasData){
-        // GAS에 데이터가 있으면 항상 GAS 우선 (타임스탬프 비교 제거)
+      const remoteTime=remote._savedAt||0
+      const localTime=D._savedAt||0
+      if(force||remoteTime>=localTime){
+        // force(지금 불러오기) 또는 GAS가 같거나 최신 → GAS 적용
         applyRemote(remote)
-      } else {
-        // GAS가 완전히 비어있을 때만 로컬 → GAS 업로드
-        gasSync()
       }
+      // 로컬이 더 최신(저장 후 아직 GAS 미반영) → 로컬 유지, gasSync가 나중에 올림
     }
     setSyncStatus('ok')
   }catch(e){
