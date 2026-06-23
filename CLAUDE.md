@@ -88,6 +88,7 @@ if(urlJustSet){
 
 - GitHub Pages로 서빙 중 (main 브랜치 푸시 시 자동 배포)
 - 배포 URL: https://yeddy-525.github.io/wedding-plan/
+- GAS 웹앱 URL: https://script.google.com/macros/s/AKfycbwnNmRBHDjgyajMeakw0xTDBP2t2PWz_0TIcdOSNhBdOGADueV598b1DRE_3EXEsXIofA/exec
 
 ## 페이지 구성
 
