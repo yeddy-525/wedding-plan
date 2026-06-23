@@ -261,6 +261,9 @@ html,body{height:100%}
   .pc{padding:16px}
   .ph{padding:12px 16px}
 }
+@media(hover:none){
+  .edit-btn,.tdel,.tl-del,.exp-del,.exp-edit{opacity:1}
+}
 @media(prefers-reduced-motion:reduce){.pc{animation:none}.vc,.ni,.btn,.chip,.tlt,.ti{transition:none}}
 </style>
 
@@ -660,6 +663,7 @@ function rCard(v){
     <div class="vm"><span>📍 ${v.loc}</span>${v.cap?'<span>👥 '+v.cap+'</span>':''}</div>
     ${tags?'<div class="vtags">'+tags+'</div>':''}
     ${v.note?'<div class="vnote">'+v.note+'</div>':''}
+    ${v.link?'<a href="'+v.link+'" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--a);margin-top:8px;text-decoration:none">↗ 바로가기</a>':''}
   </div>`
 }
 
@@ -750,7 +754,7 @@ function rJwedding(){
     return`<div class="card" style="display:flex;align-items:center;gap:14px;padding:13px 16px">
       <div style="flex:1;min-width:0">
         <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tm);margin-bottom:5px">${label}</div>
-        <input class="fi" style="font-size:11px;padding:6px 10px" placeholder="https://..." value="${url}" oninput="saveJwLink('${key}',this.value)" onblur="render()"/>
+        <input class="fi" style="font-size:11px;padding:6px 10px" placeholder="https://..." value="${url}" oninput="saveJwLink('${key}',this.value)"/>
       </div>
       <div style="flex-shrink:0">${btn}</div>
     </div>`
@@ -822,7 +826,7 @@ function rJwedding(){
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">${postCards}</div>
   <div class="jw-card ${td.comment?'done':''}" style="margin-bottom:22px"><div class="jw-card-top"><div><div class="jw-card-label">댓글</div><div style="font-size:11px;color:var(--tm);margin-top:2px">${todayLabel}</div></div><button class="jw-toggle" onclick="toggleJw('comment',0)" title="토글"></button></div>${commentUrlHtml}</div>
-  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px">
+  <div class="jw-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px">
     ${[0,1,2].map(i=>'<div class="sc"><div class="sl">'+labels[i]+'</div><div class="sv a">'+(i===0?p1cnt:i===1?p2cnt:p3cnt)+'</div><div class="sd">일</div></div>').join('')}
     <div class="sc"><div class="sl">댓글</div><div class="sv a">${cmtCnt}</div><div class="sd">일</div></div>
     <div class="sc"><div class="sl">전체 완료</div><div class="sv g">${allCnt}</div><div class="sd">일</div></div>
@@ -945,6 +949,7 @@ function openAdd(){
     </div>
     <div class="fg"><label class="fl">특징 태그 (쉼표 구분)</label><input class="fi" id="ftags" placeholder="뷔페 포함, 주차 50대"/></div>
     <div class="fg"><label class="fl">메모</label><textarea class="fi" id="fnote" rows="3" placeholder="방문 후기, 특이사항 등"></textarea></div>
+    <div class="fg"><label class="fl">링크 (인스타/네이버/홈페이지)</label><input class="fi" id="flink" placeholder="https://..."/></div>
     <div class="fg"><label class="fl">상태</label><select class="fsel" id="fst"><option>후보</option><option>검토중</option><option>확정</option><option>탈락</option></select></div>
     <div class="ma"><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitVendor()">추가하기</button></div>`
   document.getElementById('modal').style.display='flex'
@@ -967,6 +972,7 @@ function openEdit(id){
     </div>
     <div class="fg"><label class="fl">특징 태그 (쉼표 구분)</label><input class="fi" id="ftags" value="${(v.tags||[]).join(', ')}"/></div>
     <div class="fg"><label class="fl">메모</label><textarea class="fi" id="fnote" rows="3">${v.note||''}</textarea></div>
+    <div class="fg"><label class="fl">링크 (인스타/네이버/홈페이지)</label><input class="fi" id="flink" value="${v.link||''}" placeholder="https://..."/></div>
     <div class="fg"><label class="fl">상태</label><select class="fsel" id="fst"><option ${v.status==='후보'?'selected':''}>후보</option><option ${v.status==='검토중'?'selected':''}>검토중</option><option ${v.status==='확정'?'selected':''}>확정</option><option ${v.status==='탈락'?'selected':''}>탈락</option></select></div>
     <div class="ma"><button class="btn danger" onclick="deleteVendor(${id})">삭제</button><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitVendor()">저장</button></div>`
   document.getElementById('modal').style.display='flex'
@@ -976,7 +982,7 @@ function submitVendor(){
   const name=document.getElementById('fn').value.trim();if(!name){document.getElementById('fn').focus();return}
   const tagsRaw=document.getElementById('ftags').value
   const capEl=document.getElementById('fcap')
-  const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim()}
+  const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim(),link:document.getElementById('flink').value.trim()}
   if(editId){
     const vs=D.vendors[addCat],i=vs.findIndex(v=>v.id===editId)
     if(i>-1){const prev=vs[i];vs[i]={...prev,...data};if(prev.status!==data.status) addLog('vendor_status_'+data.status,data.name+' → '+data.status,CN[addCat])}
