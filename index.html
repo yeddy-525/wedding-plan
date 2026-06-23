@@ -644,7 +644,8 @@ function rDash(){
     <div><div class="stit">최근 활동</div><div class="card">${
       D.log.slice(0,8).map(e=>{
         const dot=e.type==='vendor_status_확정'||e.type==='task_done'||e.type==='tl_done'?'g':e.type==='vendor_status_탈락'?'r':''
-        const relDate=e.date===TODAY_STR?'오늘':e.date===new Date(TODAY-86400000).toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'})?'어제':e.date
+        const _d=new Date(e.id),_p=n=>String(n).padStart(2,'0')
+        const relDate=_d.getFullYear().toString().slice(2)+'-'+_p(_d.getMonth()+1)+'-'+_p(_d.getDate())+' '+_p(_d.getHours())+':'+_p(_d.getMinutes())
         return'<div class="ai"><div class="ad '+dot+'"></div><div class="ab"><div class="an">'+e.text+'</div>'+(e.detail?'<div class="adet">'+e.detail+'</div>':'')+'</div><div class="at">'+relDate+'</div></div>'
       }).join('')||'<div style="font-size:12px;color:var(--tm);padding:4px">아직 활동 기록이 없어요</div>'
     }</div></div>
