@@ -823,24 +823,16 @@ function rJwedding(){
 
   // 오늘 활동 카드 3개
   const postCards=ps.map((p,i)=>{
-    const uid='jw-p'+i
-    return'<div class="jw-card '+(p.done?'done':'')+'"><div class="jw-card-top"><div><div class="jw-card-label">'+labels[i]+'</div><div style="font-size:11px;color:var(--tm);margin-top:2px">'+todayLabel+'</div></div>'
-      +'<span style="font-size:18px;line-height:1;color:'+(p.done?'var(--ok)':'var(--b2)')+'">'+(p.done?'✓':'○')+'</span></div>'
-      +'<div style="display:flex;gap:6px;margin-top:8px;align-items:center">'
-      +'<input class="jw-url-input" id="'+uid+'" style="flex:1;margin-top:0" placeholder="링크 입력 후 저장" value="'+(p.url||'')+'" onkeydown="if(event.key===\'Enter\')saveJwUrl(\'post\','+i+',this.value)"/>'
-      +'<button class="btn sm" onclick="saveJwUrl(\'post\','+i+',document.getElementById(\''+uid+'\').value)" style="white-space:nowrap;flex-shrink:0">저장</button>'
-      +'</div>'
-      +(p.url?'<a class="jw-url-link" style="display:inline-block;margin-top:6px" href="'+p.url+'" target="_blank">↗ 열기</a>':'')
-      +'</div>'
+    const done=p.done
+    const urlHtml=done
+      ?'<input class="jw-url-input" placeholder="링크 (선택)" value="'+(p.url||'')+'" oninput="saveJwUrl(\'post\','+i+',this.value)"/>'
+       +(p.url?'<a class="jw-url-link" href="'+p.url+'" target="_blank">↗ 열기</a>':'')
+      :''
+    return'<div class="jw-card '+(done?'done':'')+'"><div class="jw-card-top"><div><div class="jw-card-label">'+labels[i]+'</div><div style="font-size:11px;color:var(--tm);margin-top:2px">'+todayLabel+'</div></div><button class="jw-toggle '+(done?'on':'')+'" onclick="toggleJw(\'post\','+i+')"></button></div>'+urlHtml+'</div>'
   }).join('')
 
-  const commentCard='<div class="jw-card '+(td.comment?'done':'')+'"><div class="jw-card-top"><div><div class="jw-card-label">댓글</div><div style="font-size:11px;color:var(--tm);margin-top:2px">'+todayLabel+'</div></div>'
-    +'<span style="font-size:18px;line-height:1;color:'+(td.comment?'var(--ok)':'var(--b2)')+'">'+(td.comment?'✓':'○')+'</span></div>'
-    +'<div style="display:flex;gap:6px;margin-top:8px;align-items:center">'
-    +'<input class="jw-url-input" id="jw-cmt" style="flex:1;margin-top:0" placeholder="댓글 링크 입력 후 저장" value="'+(td.commentUrl||'')+'" onkeydown="if(event.key===\'Enter\')saveJwUrl(\'comment\',0,this.value)"/>'
-    +'<button class="btn sm" onclick="saveJwUrl(\'comment\',0,document.getElementById(\'jw-cmt\').value)" style="white-space:nowrap;flex-shrink:0">저장</button>'
-    +'</div>'
-    +(td.commentUrl?'<a class="jw-url-link" style="display:inline-block;margin-top:6px" href="'+td.commentUrl+'" target="_blank">↗ 열기</a>':'')
+  const commentCard='<div class="jw-card '+(td.comment?'done':'')+'"><div class="jw-card-top"><div><div class="jw-card-label">댓글</div><div style="font-size:11px;color:var(--tm);margin-top:2px">'+todayLabel+'</div></div><button class="jw-toggle '+(td.comment?'on':'')+'" onclick="toggleJw(\'comment\',0)"></button></div>'
+    +(td.comment?'<input class="jw-url-input" placeholder="댓글 링크 (선택)" value="'+(td.commentUrl||'')+'" oninput="saveJwUrl(\'comment\',0,this.value)"/>'+(td.commentUrl?'<a class="jw-url-link" href="'+td.commentUrl+'" target="_blank">↗ 열기</a>':''):'')
     +'</div>'
 
   // 통계 계산
@@ -1145,10 +1137,9 @@ function toggleJw(type,idx){
 
 function saveJwUrl(type,idx,val){
   ensureJwDay();const d=D.jwedding[TODAY_STR]
-  const v=val.trim()
-  if(type==='post'){d['p'+(idx+1)].url=v;d['p'+(idx+1)].done=v!==''}
-  else{d.commentUrl=v;d.comment=v!==''}
-  sv();render()
+  if(type==='post') d['p'+(idx+1)].url=val
+  else d.commentUrl=val
+  sv()
 }
 
 function openAddMemo(){
