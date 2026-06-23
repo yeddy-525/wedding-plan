@@ -396,12 +396,12 @@ async function loadFromGAS(force){
     const text=await res.text()
     const remote=JSON.parse(text)
     if(remote&&remote.vendors){
-      const remoteTime=remote._savedAt||0
-      const localTime=D._savedAt||0
-      if(force||remoteTime>localTime){
+      const hasData=remote._savedAt>0||Object.values(remote.vendors).some(v=>v.length>0)
+      if(force||hasData){
+        // GAS에 데이터가 있으면 항상 GAS 우선 (타임스탬프 비교 제거)
         applyRemote(remote)
       } else {
-        // 로컬이 더 최신 → GAS에 덮어쓰기
+        // GAS가 완전히 비어있을 때만 로컬 → GAS 업로드
         gasSync()
       }
     }
