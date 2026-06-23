@@ -349,22 +349,18 @@ function gasSync(){
   if(!GAS_URL) return
   clearTimeout(_syncTimer)
   setSyncStatus('saving')
-  _syncTimer=setTimeout(async()=>{
-    try{
-      // no-cors: CORS preflight 없이 전송 (GAS POST 실제로 저장되도록)
-      await fetch(GAS_URL,{
-        method:'POST',
-        mode:'no-cors',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify(D)
-      })
-      setSyncStatus('ok')
-    }catch(e){
-      setSyncStatus('error')
-      console.warn('GAS 저장 실패',e)
-    }
-  },1200)
+  _syncTimer=setTimeout(()=>{
+    _syncTimer=null
+    fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(D)})
+      .then(()=>setSyncStatus('ok')).catch(e=>{setSyncStatus('error');console.warn('GAS 저장 실패',e)})
+  },300)
 }
+
+window.addEventListener('beforeunload',()=>{
+  if(!GAS_URL) return
+  clearTimeout(_syncTimer)
+  fetch(GAS_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(D)})
+})
 
 function setSyncStatus(s){
   const el=document.getElementById('sync-status');if(!el)return
@@ -400,13 +396,7 @@ async function loadFromGAS(force){
     const text=await res.text()
     const remote=JSON.parse(text)
     if(remote&&remote.vendors){
-      const remoteTime=remote._savedAt||0
-      const localTime=D._savedAt||0
-      if(force||remoteTime>=localTime){
-        // force(지금 불러오기) 또는 GAS가 같거나 최신 → GAS 적용
-        applyRemote(remote)
-      }
-      // 로컬이 더 최신(저장 후 아직 GAS 미반영) → 로컬 유지, gasSync가 나중에 올림
+      applyRemote(remote)
     }
     setSyncStatus('ok')
   }catch(e){

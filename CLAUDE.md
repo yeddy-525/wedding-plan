@@ -33,10 +33,9 @@ D = {
 ## 동기화 방식
 
 - `sv()` — D를 localStorage에 저장하고 `gasSync()` 호출
-- `gasSync()` — 1200ms 디바운스 후 GAS로 POST 전송 (no-cors)
-- `loadFromGAS()` — GAS에서 GET으로 불러온 후 `_savedAt` 타임스탬프 비교
-  - `remoteTime > localTime` → GAS 데이터 적용
-  - `localTime >= remoteTime` → 로컬 데이터를 GAS에 push
+- `gasSync()` — 300ms 디바운스 후 GAS로 POST 전송 (no-cors)
+- `beforeunload` 이벤트 → `keepalive: true` fetch로 새로고침/닫기 전 강제 전송
+- `loadFromGAS()` — GAS에서 GET으로 불러온 후 GAS 데이터가 있으면 항상 적용 (타임스탬프 비교 없음)
 - GAS URL은 `localStorage.getItem('gas_url')`에 별도 저장 (공유 데이터와 분리)
 
 ## 주요 버그 히스토리
