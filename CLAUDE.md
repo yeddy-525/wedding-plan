@@ -45,16 +45,18 @@ D.monthly['2026-06'] = {
 - `sv()` — `D._savedAt = Date.now()`, localStorage 저장, `gasSync()` 호출
 - `gasSync()` — 300ms 디바운스 후 GAS로 POST 전송 (no-cors, Content-Type: text/plain)
 - `beforeunload` 이벤트 → `keepalive: true` fetch로 새로고침/닫기 전 강제 전송
-- `loadFromGAS()` — GAS에서 GET으로 불러온 후 GAS 데이터(`remote.vendors` 있으면) 항상 적용
+- `loadFromGAS(force)` — GAS GET 후 타임스탬프 비교:
+  - `remoteTime > localTime` → GAS 적용 (다른 기기에서 저장한 경우)
+  - `remoteTime <= localTime` → 로컬 유지 (방금 저장했는데 GAS 처리 중인 경우 보호)
+  - `force=true` ("지금 불러오기" 버튼) → 항상 GAS 적용
 - GAS URL은 `localStorage.getItem('gas_url')`에 별도 저장 (공유 데이터와 분리)
-- "지금 불러오기" 버튼 → `loadFromGAS(true)` (강제 적용)
 
 ## 페이지 구성
 
 - **대시보드** — 확정/검토중/후보 통계, 이번 주 할 일, 나중에 볼 자료(메모), 최근 활동
 - **웨딩홀/스튜디오/메이크업/드레스** — 업체 카드(링크 포함), 상태 관리, 비교 테이블
 - **지출 관리** — 카테고리별 지출 기록, 예산 대비 현황
-- **제이웨딩** — 일별 글/댓글 체크, 월간 블로그 5개·인스타 5개 링크 추적, 달력, 메모
+- **제이웨딩** — 일별 글/댓글 토글 체크(링크 선택 입력), 월간 블로그 5개·인스타 5개 링크+저장버튼, 달력, 메모
 - **타임라인** — 결혼 전 개월수 기준 체크리스트
 - **설정** — 결혼 예정일, 예산, GAS URL
 
