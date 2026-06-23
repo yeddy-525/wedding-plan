@@ -84,6 +84,11 @@ if(urlJustSet){
 - Code.gs 수정 후 반드시 **새 배포** 생성 → 새 URL 앱 설정에 재입력
 - 기존 배포 URL은 이전 코드를 계속 실행하므로 업데이트 안 됨
 
+## 배포
+
+- GitHub Pages로 서빙 중 (main 브랜치 푸시 시 자동 배포)
+- 배포 URL: https://yeddy-525.github.io/wedding-plan/
+
 ## 페이지 구성
 
 - **대시보드** — 확정/검토중/후보 통계, 이번 주 할 일, 최근 활동
