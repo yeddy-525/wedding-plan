@@ -372,7 +372,23 @@ function setSyncStatus(s){
   el.style.color=c[s]||'var(--tm)'
 }
 
-async function loadFromGAS(){
+function applyRemote(remote){
+  D=remote
+  if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
+  if(!D.settings.jwLabels) D.settings.jwLabels=['글 1','글 2','글 3']
+  if(!D.settings.jwLinks) D.settings.jwLinks={cafe:'',points:''}
+  if(!D.jwedding) D.jwedding={}
+  if(!D.expenses) D.expenses=[]
+  if(!D.tasks) D.tasks=[]
+  if(!D.tl) D.tl=[]
+  if(!D.jwMemo) D.jwMemo=[]
+  if(!D.log) D.log=[]
+  D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
+  try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
+  updDday();updNC();render()
+}
+
+async function loadFromGAS(force){
   if(!GAS_URL){setSyncStatus('');return}
   setSyncStatus('loading')
   try{
@@ -382,23 +398,10 @@ async function loadFromGAS(){
     if(remote&&remote.vendors){
       const remoteTime=remote._savedAt||0
       const localTime=D._savedAt||0
-      if(remoteTime>localTime){
-        // GAS가 더 최신 → 적용
-        D=remote
-        if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
-        if(!D.settings.jwLabels) D.settings.jwLabels=['글 1','글 2','글 3']
-        if(!D.settings.jwLinks) D.settings.jwLinks={cafe:'',points:''}
-        if(!D.jwedding) D.jwedding={}
-        if(!D.expenses) D.expenses=[]
-        if(!D.tasks) D.tasks=[]
-        if(!D.tl) D.tl=[]
-        if(!D.jwMemo) D.jwMemo=[]
-        if(!D.log) D.log=[]
-        D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
-        try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
-        updDday();updNC();render()
+      if(force||remoteTime>localTime){
+        applyRemote(remote)
       } else {
-        // 로컬이 더 최신 또는 동일 → 로컬 데이터를 GAS에 덮어쓰기
+        // 로컬이 더 최신 → GAS에 덮어쓰기
         gasSync()
       }
     }
@@ -856,7 +859,7 @@ function rSettings(){
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn sm" id="test-btn" onclick="testGAS()">연결 테스트</button>
-        <button class="btn sm" onclick="loadFromGAS()">지금 불러오기</button>
+        <button class="btn sm" onclick="loadFromGAS(true)">지금 불러오기</button>
       </div>
       <div style="font-size:11px;color:var(--tm);line-height:1.6">
         설정 방법: <strong>구글 시트</strong> 열기 → 확장 프로그램 → <strong>Apps Script</strong> → Code.gs 내용 붙여넣기 → 배포 → 새 배포 → 웹 앱 → 저장 후 URL 복사
