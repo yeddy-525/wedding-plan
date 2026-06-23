@@ -327,7 +327,7 @@ const TL_MONTHS = [12,10,8,6,4,2,1,0.25] // 각 섹션의 결혼 전 개월 수
 function fp(n){
   if(!n)return'-'
   if(n>=10000000)return(Math.round(n/100000)/100)+'천만원'
-  if(n>=10000)return Math.round(n/10000)+'만원'
+  if(n>=10000){const m=n/10000;return(m%1===0?m:Math.round(m*10)/10)+'만원'}
   return n.toLocaleString()+'원'
 }
 
