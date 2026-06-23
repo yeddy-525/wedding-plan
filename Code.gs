@@ -116,11 +116,11 @@ function writeRows(ss, sheetName, rows, fields) {
 
 // ── 업체 (카테고리별 분리 저장) ───────────────────────────────────────────
 
-const V_FIELDS = ['id','cat','name','price','deposit','loc','cap','status','tags','note']
+const V_FIELDS = ['id','cat','name','price','deposit','loc','cap','status','tags','note','date']
 
 function readVendors(ss) {
   const sh = ss.getSheetByName(SH.VENDORS)
-  const result = {hall:[], studio:[], makeup:[], dress:[]}
+  const result = {hall:[], studio:[], makeup:[], dress:[], etc:[]}
   if (!sh || sh.getLastRow() < 2) return result
   sh.getRange(2, 1, sh.getLastRow() - 1, V_FIELDS.length).getValues()
     .filter(r => r[0]).forEach(r => {
@@ -133,7 +133,8 @@ function readVendors(ss) {
         v[f] = val
       })
       const cat = v.cat
-      if (result[cat]) result[cat].push(v)
+      if (!result[cat]) result[cat] = []
+      result[cat].push(v)
     })
   return result
 }

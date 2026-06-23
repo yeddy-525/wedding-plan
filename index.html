@@ -282,6 +282,7 @@ html,body{height:100%}
       <div class="ni" onclick="go('studio')" data-p="studio"><span class="ni-ico">□</span>스튜디오<span class="nc" id="nc-studio">2</span></div>
       <div class="ni" onclick="go('makeup')" data-p="makeup"><span class="ni-ico">◇</span>메이크업<span class="nc g" id="nc-makeup">1</span></div>
       <div class="ni" onclick="go('dress')" data-p="dress"><span class="ni-ico">♡</span>드레스<span class="nc" id="nc-dress">2</span></div>
+      <div class="ni" onclick="go('etc')" data-p="etc"><span class="ni-ico">◎</span>기타<span class="nc" id="nc-etc">0</span></div>
       <div class="ndiv"></div>
       <div class="ni" onclick="go('expense')" data-p="expense"><span class="ni-ico">₩</span>지출 관리</div>
       <div class="ni" onclick="go('jwedding')" data-p="jwedding"><span class="ni-ico">✎</span>제이웨딩</div>
@@ -323,7 +324,7 @@ const TODAY_STR = new Date().toLocaleDateString('en-CA', {timeZone:'Asia/Seoul'}
 const TODAY = new Date(TODAY_STR)
 
 const STS = ['후보','검토중','확정','탈락']
-const CN  = {hall:'웨딩홀',studio:'스튜디오',makeup:'메이크업',dress:'드레스'}
+const CN  = {hall:'웨딩홀',studio:'스튜디오',makeup:'메이크업',dress:'드레스',etc:'기타'}
 const TL_MONTHS = [12,10,8,6,4,2,1,0.25] // 각 섹션의 결혼 전 개월 수
 
 function fp(n){
@@ -375,6 +376,8 @@ function applyRemote(remote){
   if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
   if(!D.settings.jwLabels) D.settings.jwLabels=['글 1','글 2','글 3']
   if(!D.settings.jwLinks) D.settings.jwLinks={cafe:'',points:''}
+  if(!D.vendors) D.vendors={hall:[],studio:[],makeup:[],dress:[],etc:[]}
+  if(!D.vendors.etc) D.vendors.etc=[]
   if(!D.jwedding) D.jwedding={}
   if(!D.expenses) D.expenses=[]
   if(!D.tasks) D.tasks=[]
@@ -433,7 +436,7 @@ async function testGAS(){
 }
 
 let D = ld() || {
-  vendors:{hall:[],studio:[],makeup:[],dress:[]},
+  vendors:{hall:[],studio:[],makeup:[],dress:[],etc:[]},
   tasks:[],
   tl:[
     {id:1,mo:'결혼 12개월 전',mb:12,tasks:[
@@ -554,6 +557,7 @@ function go(p){
     studio:['스튜디오',allV('studio').length+'개 후보'],
     makeup:['메이크업',allV('makeup').length+'개 후보'],
     dress:['드레스',allV('dress').length+'개 후보'],
+    etc:['기타',allV('etc').length+'개 후보'],
     expense:['지출 관리','지금까지 '+fp(expTotal)+' 사용'],
     jwedding:['제이웨딩','글 '+jwPosts+'일 작성'],
     timeline:['타임라인','준비 일정 관리'],
@@ -603,9 +607,19 @@ function rDash(){
       <button class="tdel" onclick="event.stopPropagation();deleteTask(${t.id})">×</button>
     </div>`).join('')
 
+  const confVendors=Object.entries(D.vendors).flatMap(([cat,vs])=>vs.filter(v=>v.status==='확정').map(v=>({...v,cat})))
+  const confSection=confVendors.length?`<div class="card" style="margin-bottom:18px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--tm);margin-bottom:10px">확정 업체</div>
+    ${confVendors.map(v=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--b);cursor:pointer" onclick="go('${v.cat}')">
+      <span style="font-size:11px;color:var(--tm);width:52px;flex-shrink:0">${CN[v.cat]||v.cat}</span>
+      <span style="font-size:13px;font-weight:600;flex:1">${v.name}</span>
+      ${v.date?`<span style="font-size:11px;color:var(--a);flex-shrink:0">${v.date.replace(/-/g,'.')}</span>`:''}
+    </div>`).join('')}
+  </div>`:'';
+
   return`<div class="sg">
-    <div class="sc"><div class="sl">확정</div><div class="sv g">${conf}</div><div class="sd">메이크업</div></div>
-    <div class="sc"><div class="sl">검토중</div><div class="sv a">${rev}</div><div class="sd">홀·스튜디오·드레스</div></div>
+    <div class="sc"><div class="sl">확정</div><div class="sv g">${conf}</div><div class="sd">업체</div></div>
+    <div class="sc"><div class="sl">검토중</div><div class="sv a">${rev}</div><div class="sd">업체</div></div>
     <div class="sc"><div class="sl">후보</div><div class="sv">${cand}</div><div class="sd">결정 전</div></div>
     <div class="sc" style="cursor:pointer" onclick="go('expense')">
       <div class="sl">지금까지 쓴 돈</div>
@@ -614,6 +628,7 @@ function rDash(){
       <div style="font-size:10px;color:var(--a);margin-top:8px">→ 전체 내역 보기</div>
     </div>
   </div>
+  ${confSection}
   <div class="stit">타임라인 — ${tlDone}/${tlAll.length} 완료 (${tlPct}%)</div>
   <div class="pb" style="height:5px;margin-bottom:20px"><div class="pf" style="width:${tlPct}%"></div></div>
   <div class="two">
@@ -1029,7 +1044,10 @@ function openAdd(){
     <div class="fg"><label class="fl">특징 태그 (쉼표 구분)</label><input class="fi" id="ftags" placeholder="뷔페 포함, 주차 50대"/></div>
     <div class="fg"><label class="fl">메모</label><textarea class="fi" id="fnote" rows="3" placeholder="방문 후기, 특이사항 등"></textarea></div>
     <div class="fg"><label class="fl">링크 (인스타/네이버/홈페이지)</label><input class="fi" id="flink" placeholder="https://..."/></div>
-    <div class="fg"><label class="fl">상태</label><select class="fsel" id="fst"><option>후보</option><option>검토중</option><option>확정</option><option>탈락</option></select></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">상태</label><select class="fsel" id="fst"><option>후보</option><option>검토중</option><option>확정</option><option>탈락</option></select></div>
+      <div class="fg"><label class="fl">예약/촬영일</label><input class="fi" id="fdate" type="date"/></div>
+    </div>
     <div class="ma"><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitVendor()">추가하기</button></div>`
   document.getElementById('modal').style.display='flex'
   setTimeout(()=>document.getElementById('fn').focus(),50)
@@ -1052,7 +1070,10 @@ function openEdit(id){
     <div class="fg"><label class="fl">특징 태그 (쉼표 구분)</label><input class="fi" id="ftags" value="${(v.tags||[]).join(', ')}"/></div>
     <div class="fg"><label class="fl">메모</label><textarea class="fi" id="fnote" rows="3">${v.note||''}</textarea></div>
     <div class="fg"><label class="fl">링크 (인스타/네이버/홈페이지)</label><input class="fi" id="flink" value="${v.link||''}" placeholder="https://..."/></div>
-    <div class="fg"><label class="fl">상태</label><select class="fsel" id="fst"><option ${v.status==='후보'?'selected':''}>후보</option><option ${v.status==='검토중'?'selected':''}>검토중</option><option ${v.status==='확정'?'selected':''}>확정</option><option ${v.status==='탈락'?'selected':''}>탈락</option></select></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">상태</label><select class="fsel" id="fst"><option ${v.status==='후보'?'selected':''}>후보</option><option ${v.status==='검토중'?'selected':''}>검토중</option><option ${v.status==='확정'?'selected':''}>확정</option><option ${v.status==='탈락'?'selected':''}>탈락</option></select></div>
+      <div class="fg"><label class="fl">예약/촬영일</label><input class="fi" id="fdate" type="date" value="${v.date||''}"/></div>
+    </div>
     <div class="ma"><button class="btn danger" onclick="deleteVendor(${id})">삭제</button><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitVendor()">저장</button></div>`
   document.getElementById('modal').style.display='flex'
 }
@@ -1061,7 +1082,7 @@ function submitVendor(){
   const name=document.getElementById('fn').value.trim();if(!name){document.getElementById('fn').focus();return}
   const tagsRaw=document.getElementById('ftags').value
   const capEl=document.getElementById('fcap')
-  const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim(),link:document.getElementById('flink').value.trim()}
+  const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim(),link:document.getElementById('flink').value.trim(),date:document.getElementById('fdate')?.value||''}
   if(editId){
     const vs=D.vendors[addCat],i=vs.findIndex(v=>v.id===editId)
     if(i>-1){const prev=vs[i];vs[i]={...prev,...data};if(prev.status!==data.status) addLog('vendor_status_'+data.status,data.name+' → '+data.status,CN[addCat])}
