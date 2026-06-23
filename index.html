@@ -482,6 +482,7 @@ let D = ld() || {
   expenses:[],
   jwedding:{},
   jwMemo:[],
+  notes:[],
   log:[],
   settings:{weddingDate:'2027-02-14',budget:30000000,jwLabels:['글 1','글 2','글 3'],jwLinks:{cafe:'',points:''}}
 }
@@ -495,6 +496,7 @@ if(!D.expenses) D.expenses=[]
 if(!D.tasks) D.tasks=[]
 if(!D.tl) D.tl=[]
 if(!D.jwMemo) D.jwMemo=[]
+if(!D.notes) D.notes=[]
 if(!D.log) D.log=[]
 D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
 // 구버전 jwedding 데이터 마이그레이션 (post → p1/p2/p3)
@@ -629,6 +631,24 @@ function rDash(){
         return'<div class="ai"><div class="ad '+dot+'"></div><div class="ab"><div class="an">'+e.text+'</div>'+(e.detail?'<div class="adet">'+e.detail+'</div>':'')+'</div><div class="at">'+relDate+'</div></div>'
       }).join('')||'<div style="font-size:12px;color:var(--tm);padding:4px">아직 활동 기록이 없어요</div>'
     }</div></div>
+  </div>
+  <div style="margin-top:18px">
+    <div class="task-header">
+      <div class="stit" style="margin:0">나중에 볼 자료</div>
+      <button class="btn sm" onclick="openAddNote()">+ 추가</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:11px">${
+      D.notes.length?D.notes.map(n=>`
+        <div class="card" style="cursor:pointer;position:relative" onclick="openEditNote(${n.id})">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+            <div style="font-size:13px;font-weight:600;flex:1">${n.title}</div>
+            <div style="font-size:10px;color:var(--tm);white-space:nowrap;flex-shrink:0">${n.date}</div>
+          </div>
+          ${n.content?'<div style="font-size:12px;color:var(--tm);line-height:1.5;white-space:pre-wrap;margin-bottom:6px">'+n.content+'</div>':''}
+          ${n.link?'<a href="'+n.link+'" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--a);text-decoration:none;display:inline-flex;align-items:center;gap:3px">↗ 링크 열기</a>':''}
+        </div>`).join('')
+      :'<div class="card" style="grid-column:1/-1;text-align:center;padding:28px;color:var(--tm);font-size:13px">참고할 자료, 링크, 메모를 추가해보세요</div>'
+    }</div>
   </div>`
 }
 
@@ -1095,6 +1115,35 @@ function saveMemoEdit(id){
 
 function deleteMemo(id){
   D.jwMemo=D.jwMemo.filter(m=>m.id!==id);sv();closeModal();render()
+}
+
+function openAddNote(){
+  document.getElementById('mbox').innerHTML='<div class="mtit">자료 추가</div><div class="fg"><label class="fl">제목 *</label><input class="fi" id="note-title" placeholder="예: 청첩장 두꺼운 용지 후기"/></div><div class="fg"><label class="fl">내용</label><textarea class="fi" id="note-content" rows="4" placeholder="메모, 후기, 정보 등" style="resize:vertical"></textarea></div><div class="fg"><label class="fl">링크</label><input class="fi" id="note-link" placeholder="https://..."/></div><div class="ma"><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitNote()">추가</button></div>'
+  document.getElementById('modal').style.display='flex'
+  setTimeout(()=>document.getElementById('note-title').focus(),50)
+}
+
+function submitNote(){
+  const title=document.getElementById('note-title').value.trim();if(!title)return
+  D.notes.unshift({id:Date.now(),title,content:document.getElementById('note-content').value.trim(),link:document.getElementById('note-link').value.trim(),date:TODAY_STR})
+  sv();closeModal();render()
+}
+
+function openEditNote(id){
+  const n=D.notes.find(n=>n.id===id);if(!n)return
+  document.getElementById('mbox').innerHTML='<div class="mtit">자료 편집</div><div class="fg"><label class="fl">제목 *</label><input class="fi" id="note-title" value="'+n.title+'"/></div><div class="fg"><label class="fl">내용</label><textarea class="fi" id="note-content" rows="4" style="resize:vertical">'+n.content+'</textarea></div><div class="fg"><label class="fl">링크</label><input class="fi" id="note-link" value="'+(n.link||'')+'"/></div><div class="ma"><button class="btn danger" onclick="deleteNote('+id+')">삭제</button><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="saveNoteEdit('+id+')">저장</button></div>'
+  document.getElementById('modal').style.display='flex'
+}
+
+function saveNoteEdit(id){
+  const n=D.notes.find(n=>n.id===id);if(!n)return
+  const title=document.getElementById('note-title').value.trim();if(!title)return
+  n.title=title;n.content=document.getElementById('note-content').value.trim();n.link=document.getElementById('note-link').value.trim()
+  sv();closeModal();render()
+}
+
+function deleteNote(id){
+  D.notes=D.notes.filter(n=>n.id!==id);sv();closeModal();render()
 }
 
 function calMove(dir){

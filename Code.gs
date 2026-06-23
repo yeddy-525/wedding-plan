@@ -12,6 +12,7 @@ const SH = {
   EXPENSES : 'Expenses',
   JWEDDING : 'JWedding',
   JWMEMO   : 'JWedding_Memo',
+  NOTES    : 'Notes',
   LOG      : 'Log'
 }
 
@@ -28,6 +29,7 @@ function doGet(e) {
       expenses: readRows(ss, SH.EXPENSES, ['id','cat','name','amount','date','note']),
       jwedding: readJwedding(ss),
       jwMemo  : readRows(ss, SH.JWMEMO,   ['id','title','content','date']),
+      notes   : readRows(ss, SH.NOTES,    ['id','title','content','link','date']),
       log     : readRows(ss, SH.LOG,      ['id','type','text','detail','date']),
       settings: cfg.settings,
       _savedAt: cfg.savedAt
@@ -51,6 +53,7 @@ function doPost(e) {
     writeRows    (ss, SH.EXPENSES, D.expenses || [], ['id','cat','name','amount','date','note'])
     writeJwedding(ss, D.jwedding || {})
     writeRows    (ss, SH.JWMEMO,   D.jwMemo   || [], ['id','title','content','date'])
+    writeRows    (ss, SH.NOTES,    D.notes    || [], ['id','title','content','link','date'])
     writeRows    (ss, SH.LOG,      (D.log||[]).slice(0,50), ['id','type','text','detail','date'])
     writeSettings(ss, D.settings  || {}, D._savedAt || 0)
 
