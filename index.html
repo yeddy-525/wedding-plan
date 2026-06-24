@@ -208,6 +208,14 @@ html,body{height:100%}
 .cal-dots{display:flex;gap:3px;margin-top:2px}
 .cal-dot{width:4px;height:4px;border-radius:50%;background:currentColor}
 
+/* GAS LOADING LOCK */
+#gas-lock{position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .3s}
+#gas-lock.hidden{opacity:0;pointer-events:none}
+.gas-spinner{width:36px;height:36px;border:3px solid var(--s2);border-top-color:var(--a);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gas-lock-msg{font-size:13px;color:var(--tm)}
+.gas-lock-skip{font-size:11px;color:var(--a);cursor:pointer;text-decoration:underline;margin-top:4px}
+
 /* SETTINGS */
 .set-section{margin-bottom:22px}
 .set-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--tm);margin-bottom:12px}
@@ -312,6 +320,12 @@ html,body{height:100%}
   <div class="cfi" id="cfi"></div>
   <button class="btn p" onclick="doCompare()">비교하기</button>
   <button class="btn" onclick="clearCmp()">취소</button>
+</div>
+
+<div id="gas-lock">
+  <div class="gas-spinner"></div>
+  <div class="gas-lock-msg">구글 시트에서 데이터를 불러오는 중...</div>
+  <div class="gas-lock-skip" onclick="unlockApp()">오프라인으로 계속하기</div>
 </div>
 
 <div class="mbg" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
@@ -421,8 +435,13 @@ function applyRemote(remote){
   updDday();updNC();render()
 }
 
+function unlockApp(){
+  const el=document.getElementById('gas-lock')
+  if(el){el.classList.add('hidden');setTimeout(()=>el.remove(),300)}
+}
+
 async function loadFromGAS(force){
-  if(!GAS_URL){setSyncStatus('');return}
+  if(!GAS_URL){setSyncStatus('');unlockApp();return}
   setSyncStatus('loading')
   try{
     const res=await fetch(GAS_URL+'?t='+Date.now())
@@ -440,6 +459,8 @@ async function loadFromGAS(force){
   }catch(e){
     setSyncStatus('error')
     console.warn('GAS 로드 실패',e)
+  }finally{
+    unlockApp()
   }
 }
 
