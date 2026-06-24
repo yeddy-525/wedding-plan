@@ -333,11 +333,16 @@ function fp(n){
   if(n>=10000){const m=n/10000;return(m%1===0?m:Math.round(m*10)/10)+'만원'}
   return n.toLocaleString()+'원'
 }
+function fmtTs(ts){
+  const d=new Date(ts),p=n=>String(n).padStart(2,'0')
+  return d.getFullYear().toString().slice(2)+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())
+}
 
 function ld(){try{return JSON.parse(localStorage.getItem('wd'))||null}catch{return null}}
 
 // GAS URL은 기기별 설정 (공유 데이터에 포함 안 됨)
-let GAS_URL = localStorage.getItem('gas_url') || ''
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwnNmRBHDjgyajMeakw0xTDBP2t2PWz_0TIcdOSNhBdOGADueV598b1DRE_3EXEsXIofA/exec'
+let GAS_URL = localStorage.getItem('gas_url') || DEFAULT_GAS_URL
 
 function sv(){
   D._savedAt=Date.now()
@@ -371,7 +376,25 @@ function setSyncStatus(s){
   el.style.color=c[s]||'var(--tm)'
 }
 
+function normalizeMonthly(monthly){
+  if(!monthly) return {}
+  const out={}
+  Object.keys(monthly).forEach(k=>{
+    if(k.length>7){
+      const d=new Date(k)
+      if(!isNaN(d.getTime())){
+        const nk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')
+        out[nk]=monthly[k]
+      }
+    } else {
+      out[k]=monthly[k]
+    }
+  })
+  return out
+}
+
 function applyRemote(remote){
+  const localMonthly=D.monthly
   D=remote
   if(!D.settings) D.settings={weddingDate:'2027-02-14',budget:30000000}
   if(!D.settings.jwLabels) D.settings.jwLabels=['글 1','글 2','글 3']
@@ -384,7 +407,8 @@ function applyRemote(remote){
   if(!D.tl) D.tl=[]
   if(!D.jwMemo) D.jwMemo=[]
   if(!D.notes) D.notes=[]
-  if(!D.monthly) D.monthly={}
+  if(!D.monthly||Object.keys(D.monthly).length===0) D.monthly=localMonthly||{}
+  D.monthly=normalizeMonthly(D.monthly)
   if(!D.log) D.log=[]
   D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
   try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
@@ -502,6 +526,7 @@ if(!D.tl) D.tl=[]
 if(!D.jwMemo) D.jwMemo=[]
 if(!D.notes) D.notes=[]
 if(!D.monthly) D.monthly={}
+D.monthly=normalizeMonthly(D.monthly)
 if(!D.log) D.log=[]
 D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
 // 구버전 jwedding 데이터 마이그레이션 (post → p1/p2/p3)
@@ -705,6 +730,7 @@ function rCard(v){
     ${tags?'<div class="vtags">'+tags+'</div>':''}
     ${v.note?'<div class="vnote">'+v.note+'</div>':''}
     ${v.link?'<a href="'+v.link+'" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--a);margin-top:8px;text-decoration:none">↗ 바로가기</a>':''}
+    ${v.status==='확정'&&v.confirmedAt?'<div style="font-size:10px;color:var(--ok);margin-top:7px;letter-spacing:.02em">✓ 확정 '+fmtTs(v.confirmedAt)+'</div>':''}
   </div>`
 }
 
@@ -872,14 +898,17 @@ function rJwedding(){
     const ds=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0')
     const data=D.jwedding[ds]
     const isToday=ds===TODAY_STR
-    const doneCount=data?[data.p1,data.p2,data.p3].filter(p=>p&&p.done).length+(data.comment?1:0):0
+    const postsDone=data?[data.p1,data.p2,data.p3].filter(p=>p&&p.done).length:0
+    const cmtDone=data&&data.comment?1:0
+    const doneCount=postsDone+cmtDone
     const total=4
     let cls='cal-cell'+(isToday?' today':'')
     if(doneCount===total) cls+=' both'
     else if(doneCount>=2) cls+=' post-only'
     else if(doneCount===1) cls+=' comment-only'
-    const dots=doneCount>0?'<div class="cal-dots">'+Array.from({length:Math.min(doneCount,4)},()=>'<div class="cal-dot"></div>').join('')+'</div>':''
-    cells+='<div class="'+cls+'">'+d+dots+'</div>'
+    const earned=postsDone*500+cmtDone*1500
+    const earnedStr=earned>0?'<div style="font-size:9px;margin-top:1px;opacity:.9;letter-spacing:-.01em">'+(earned>=1000?(earned/1000)+'천':''+earned)+'</div>':''
+    cells+='<div class="'+cls+'">'+d+earnedStr+'</div>'
   }
 
   // 메모 목록
@@ -901,9 +930,11 @@ function rJwedding(){
     const mlyKey=mlyYear+'-'+String(mlyMonth+1).padStart(2,'0')
     const mlyLabel=mlyYear+'년 '+(mlyMonth+1)+'월'
     const md=D.monthly&&D.monthly[mlyKey]?D.monthly[mlyKey]:{blog:Array.from({length:5},()=>({done:false,url:''})),insta:Array.from({length:5},()=>({done:false,url:''}))}
+    const RATE={blog:2000,insta:1000}
     const mkCol=(type,label)=>{
       const items=(md[type]||[]).concat(Array.from({length:5},()=>({done:false,url:''}))).slice(0,5)
       const cnt=items.filter(i=>i.done).length
+      const earned=cnt*RATE[type]
       const rows=items.map((item,idx)=>{
         const uid='mly-'+type+'-'+idx
         return'<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--b)">'
@@ -913,11 +944,14 @@ function rJwedding(){
           +'<button class="btn sm" onclick="saveMonthlyUrl(\''+mlyKey+'\',\''+type+'\','+idx+',document.getElementById(\''+uid+'\').value)" style="flex-shrink:0;padding:4px 8px;font-size:11px">저장</button>'
           +'</div>'
       }).join('')
-      return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12px;font-weight:600">'+label+'</div><div style="font-size:11px;color:'+(cnt===5?'var(--ok)':'var(--tm)')+'">'+cnt+'/5</div></div>'+rows+'</div>'
+      return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12px;font-weight:600">'+label+'<span style="font-size:10px;color:var(--tm);margin-left:6px">1건 '+RATE[type].toLocaleString()+'원</span></div><div style="font-size:11px;color:'+(cnt>0?'var(--ok)':'var(--tm)')+'">'+cnt+'/5 · <span style="color:var(--ok);font-weight:600">'+earned.toLocaleString()+'원</span></div></div>'+rows+'</div>'
     }
+    const blogCnt=(md.blog||[]).filter(i=>i.done).length
+    const instaCnt=(md.insta||[]).filter(i=>i.done).length
+    const totalMly=blogCnt*2000+instaCnt*1000
     return'<div style="margin-bottom:22px">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
-      +'<div class="stit" style="margin:0">블로그 & 인스타 월간</div>'
+      +'<div style="display:flex;align-items:center;gap:10px"><div class="stit" style="margin:0">블로그 & 인스타 월간</div>'+(totalMly>0?'<span style="font-size:11px;color:var(--ok);font-weight:600">+'+totalMly.toLocaleString()+'원</span>':'')+'</div>'
       +'<div style="display:flex;align-items:center;gap:8px"><button class="cal-nav-btn" onclick="mlyMove(-1)">‹</button><span style="font-size:13px;font-family:\'Palatino Linotype\',Palatino,Georgia,serif">'+mlyLabel+'</span><button class="cal-nav-btn" onclick="mlyMove(1)">›</button></div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+mkCol('blog','블로그')+mkCol('insta','인스타')+'</div>'
@@ -980,6 +1014,8 @@ function clearCmp(){cmpSet.clear();cmpMode=false;updCF();render()}
 function cycSt(id){
   const v=flatV().find(v=>v.id===id);if(!v)return
   v.status=STS[(STS.indexOf(v.status)+1)%STS.length]
+  if(v.status==='확정') v.confirmedAt=Date.now()
+  else delete v.confirmedAt
   addLog('vendor_status_'+v.status, v.name+' → '+v.status)
   sv();updNC();render()
 }
@@ -1088,9 +1124,15 @@ function submitVendor(){
   const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim(),link:document.getElementById('flink').value.trim(),date:document.getElementById('fdate')?.value||''}
   if(editId){
     const vs=D.vendors[addCat],i=vs.findIndex(v=>v.id===editId)
-    if(i>-1){const prev=vs[i];vs[i]={...prev,...data};if(prev.status!==data.status) addLog('vendor_status_'+data.status,data.name+' → '+data.status,CN[addCat])}
+    if(i>-1){
+      const prev=vs[i]
+      const confirmedAt=data.status==='확정'?(prev.status==='확정'?prev.confirmedAt:Date.now()):undefined
+      vs[i]={...prev,...data,...(confirmedAt?{confirmedAt}:{confirmedAt:undefined})}
+      if(prev.status!==data.status) addLog('vendor_status_'+data.status,data.name+' → '+data.status,CN[addCat])
+    }
   } else {
-    D.vendors[addCat].push({id:Date.now(),...data})
+    const confirmedAt=data.status==='확정'?Date.now():undefined
+    D.vendors[addCat].push({id:Date.now(),...data,...(confirmedAt?{confirmedAt}:{})})
     addLog('vendor_add',data.name+' 추가',CN[addCat]+' · '+data.status)
   }
   sv();updNC();closeModal()
