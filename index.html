@@ -376,22 +376,27 @@ function setSyncStatus(s){
   el.style.color=c[s]||'var(--tm)'
 }
 
-function normalizeMonthly(monthly){
-  if(!monthly) return {}
+function normalizeDateKeys(obj, fmt){
+  if(!obj) return {}
   const out={}
-  Object.keys(monthly).forEach(k=>{
-    if(k.length>7){
+  Object.keys(obj).forEach(k=>{
+    if(/^\d{4}-\d{2}(-\d{2})?$/.test(k)){
+      out[k]=obj[k]
+    } else {
       const d=new Date(k)
       if(!isNaN(d.getTime())){
-        const nk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')
-        out[nk]=monthly[k]
+        const p=n=>String(n).padStart(2,'0')
+        const nk=fmt==='day'
+          ?d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())
+          :d.getFullYear()+'-'+p(d.getMonth()+1)
+        out[nk]=obj[k]
       }
-    } else {
-      out[k]=monthly[k]
     }
   })
   return out
 }
+function normalizeMonthly(m){return normalizeDateKeys(m,'month')}
+function normalizeJwedding(j){return normalizeDateKeys(j,'day')}
 
 function applyRemote(remote){
   const localMonthly=D.monthly
@@ -409,6 +414,7 @@ function applyRemote(remote){
   if(!D.notes) D.notes=[]
   if(!D.monthly||Object.keys(D.monthly).length===0) D.monthly=localMonthly||{}
   D.monthly=normalizeMonthly(D.monthly)
+  D.jwedding=normalizeJwedding(D.jwedding)
   if(!D.log) D.log=[]
   D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
   try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
@@ -527,6 +533,8 @@ if(!D.jwMemo) D.jwMemo=[]
 if(!D.notes) D.notes=[]
 if(!D.monthly) D.monthly={}
 D.monthly=normalizeMonthly(D.monthly)
+if(!D.jwedding) D.jwedding={}
+D.jwedding=normalizeJwedding(D.jwedding)
 if(!D.log) D.log=[]
 D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
 // 구버전 jwedding 데이터 마이그레이션 (post → p1/p2/p3)
