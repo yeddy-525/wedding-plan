@@ -325,7 +325,7 @@ html,body{height:100%}
 <div id="gas-lock">
   <div class="gas-spinner"></div>
   <div class="gas-lock-msg">구글 시트에서 데이터를 불러오는 중...</div>
-  <div class="gas-lock-skip" onclick="unlockApp()">오프라인으로 계속하기</div>
+  <div class="gas-lock-skip" onclick="continueOffline()">오프라인으로 계속하기</div>
 </div>
 
 <div class="mbg" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
@@ -357,37 +357,62 @@ function ld(){try{return JSON.parse(localStorage.getItem('wd'))||null}catch{retu
 // GAS URL은 기기별 설정 (공유 데이터에 포함 안 됨)
 const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwnNmRBHDjgyajMeakw0xTDBP2t2PWz_0TIcdOSNhBdOGADueV598b1DRE_3EXEsXIofA/exec'
 let GAS_URL = localStorage.getItem('gas_url') || DEFAULT_GAS_URL
+let _gasDataLoaded = false   // GAS 유효 응답 확인 후에만 true
+let _gasOfflineMode = false  // 오프라인 모드 시 GAS POST 차단
+let _hasLocalChange = false  // 실제 사용자 변경 발생 시에만 true
 
 function sv(){
   D._savedAt=Date.now()
+  _hasLocalChange=true
   try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
   gasSync()
 }
 
 let _syncTimer=null
+async function postGAS(data,opts){
+  const res=await fetch(GAS_URL,{method:'POST',keepalive:!!(opts&&opts.keepalive),headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(data)})
+  const text=await res.text()
+  let json=null
+  if(text){try{json=JSON.parse(text)}catch(e){throw new Error('GAS response is not valid JSON')}}
+  if(!res.ok) throw new Error('GAS save failed: HTTP '+res.status)
+  if(json&&json.ok===false) throw new Error(json.error||'GAS save failed')
+  return json||{ok:true}
+}
+
 function gasSync(){
-  if(!GAS_URL) return
+  if(!GAS_URL||!_gasDataLoaded||_gasOfflineMode) return
   clearTimeout(_syncTimer)
   setSyncStatus('saving')
   _syncTimer=setTimeout(()=>{
     _syncTimer=null
-    fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(D)})
-      .then(()=>setSyncStatus('ok')).catch(e=>{setSyncStatus('error');console.warn('GAS 저장 실패',e)})
+    postGAS(D).then(()=>{_hasLocalChange=false;setSyncStatus('ok')}).catch(e=>{setSyncStatus('error');console.warn('GAS 저장 실패',e)})
   },300)
 }
 
 window.addEventListener('beforeunload',()=>{
-  if(!GAS_URL) return
+  if(!GAS_URL||!_gasDataLoaded||_gasOfflineMode||!_hasLocalChange) return
   clearTimeout(_syncTimer)
-  fetch(GAS_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(D)})
+  fetch(GAS_URL,{method:'POST',keepalive:true,headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(D)})
 })
 
 function setSyncStatus(s){
   const el=document.getElementById('sync-status');if(!el)return
-  const m={ok:'✓ 동기화됨',saving:'동기화 중…',error:'⚠ 오프라인',loading:'불러오는 중…'}
-  const c={ok:'var(--ok)',saving:'var(--tm)',error:'var(--no)',loading:'var(--tm)'}
+  const m={ok:'✓ 동기화됨',saving:'동기화 중…',error:'⚠ 오프라인',loading:'불러오는 중…',offline:'오프라인 모드'}
+  const c={ok:'var(--ok)',saving:'var(--tm)',error:'var(--no)',loading:'var(--tm)',offline:'var(--tm)'}
   el.textContent=m[s]||''
   el.style.color=c[s]||'var(--tm)'
+}
+
+function hasUserData(data){
+  if(!data) return false
+  const vendors=data.vendors||{}
+  return Object.values(vendors).some(v=>Array.isArray(v)&&v.length>0)
+    ||(Array.isArray(data.expenses)&&data.expenses.length>0)
+    ||(Array.isArray(data.tasks)&&data.tasks.length>0)
+    ||(data.jwedding&&Object.keys(data.jwedding).length>0)
+    ||(Array.isArray(data.jwMemo)&&data.jwMemo.length>0)
+    ||(Array.isArray(data.notes)&&data.notes.length>0)
+    ||(data.monthly&&Object.keys(data.monthly).length>0)
 }
 
 function normalizeDateKeys(obj, fmt){
@@ -440,23 +465,35 @@ function unlockApp(){
   if(el){el.classList.add('hidden');setTimeout(()=>el.remove(),300)}
 }
 
+function continueOffline(){
+  _gasOfflineMode=true
+  _gasDataLoaded=false
+  setSyncStatus('offline')
+  unlockApp()
+}
+
 async function loadFromGAS(force){
   if(!GAS_URL){setSyncStatus('');unlockApp();return}
+  _gasDataLoaded=false
+  _gasOfflineMode=false
   setSyncStatus('loading')
   try{
     const res=await fetch(GAS_URL+'?t='+Date.now())
+    if(!res.ok) throw new Error('GAS load failed: HTTP '+res.status)
     const text=await res.text()
     const remote=JSON.parse(text)
-    if(remote&&remote.vendors){
-      const remoteTime=remote._savedAt||0
-      const localTime=D._savedAt||0
-      if(force||remoteTime>localTime){
-        applyRemote(remote)
-      }
-      // 로컬이 같거나 최신 → 로컬 유지
+    if(!remote||!remote.vendors) throw new Error('GAS data is invalid')
+    const remoteTime=remote._savedAt||0
+    const localTime=D._savedAt||0
+    if(force||remoteTime>localTime||(!hasUserData(D)&&hasUserData(remote))){
+      applyRemote(remote)
+      if(force) sv() // 강제 로드 후 타임스탬프 갱신: 이후 새로고침에서도 복원 데이터 유지
     }
+    _gasDataLoaded=true
+    _hasLocalChange=false
     setSyncStatus('ok')
   }catch(e){
+    _gasDataLoaded=false
     setSyncStatus('error')
     console.warn('GAS 로드 실패',e)
   }finally{
