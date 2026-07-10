@@ -1,6 +1,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>우리의 결혼준비 ✦</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4A8FE0">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="결혼준비">
 <style>
 :root {
   --g:#F3F7FF;--s:#FFFFFF;--s2:#E8F0FE;--t:#1A2340;--tm:#6B7899;
@@ -1377,4 +1385,8 @@ function closeSidebar(){
 
 updNC();render()
 loadFromGAS()
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js')
+}
 </script>
