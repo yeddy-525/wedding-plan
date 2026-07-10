@@ -60,10 +60,10 @@ function doPost(e) {
     writeRows    (ss, SH.LOG,      (D.log||[]).slice(0,50), ['id','type','text','detail','date'])
     writeSettings(ss, D.settings  || {}, D._savedAt || 0)
 
-    return ContentService.createTextOutput('ok')
-      .setMimeType(ContentService.MimeType.TEXT)
+    return ContentService.createTextOutput(JSON.stringify({ok:true}))
+      .setMimeType(ContentService.MimeType.JSON)
   } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({error: err.toString()}))
+    return ContentService.createTextOutput(JSON.stringify({ok:false,error: err.toString()}))
       .setMimeType(ContentService.MimeType.JSON)
   }
 }
