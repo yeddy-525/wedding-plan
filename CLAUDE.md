@@ -39,13 +39,17 @@ D = {
 }
 ```
 
-### monthly 구조
+### monthly 구조 (2026-07-30 확장: 포인트인증, 카페 랜덤이벤트 추가)
 ```js
 D.monthly['2026-06'] = {
-  blog:  [{done:false, url:''}, ...],  // 5개
-  insta: [{done:false, url:''}, ...]   // 5개
+  blog:  [{done:false, url:'', date:''}, ...],  // 5개, 1건 2000원
+  insta: [{done:false, url:'', date:''}, ...],  // 5개, 1건 1000원
+  point: [{done:false, url:'', date:''}, ...],  // 4개, 1건 500원 (포인트인증)
+  cafe:  [{done:false, url:'', amount:0, date:''}, ...]  // 가변 길이, 항목별 적립액 직접 입력 (카페 랜덤이벤트, 횟수·금액 매달 다름)
 }
 ```
+- `date`: 링크 입력으로 처음 완료 처리된 날짜(YYYY-MM-DD). 완료 취소 시 초기화. 달력 일일 칸의 적립액 표시에 합산됨 (`monthlyEarnedByDate()`)
+- 고정 슬롯 타입(blog/insta/point) 개수는 `MLY_FIXED_COUNTS`에 정의
 
 ## 동기화 방식
 

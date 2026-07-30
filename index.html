@@ -889,13 +889,22 @@ function mlyMove(dir){
   render()
 }
 
+const MLY_FIXED_COUNTS={blog:5,insta:5,point:4}
+
 function ensureMonthly(key){
   if(!D.monthly) D.monthly={}
-  if(!D.monthly[key]) D.monthly[key]={blog:Array.from({length:5},()=>({done:false,url:''})),insta:Array.from({length:5},()=>({done:false,url:''}))}
-  ;['blog','insta'].forEach(t=>{
-    if(!D.monthly[key][t]) D.monthly[key][t]=Array.from({length:5},()=>({done:false,url:''}))
-    while(D.monthly[key][t].length<5) D.monthly[key][t].push({done:false,url:''})
+  if(!D.monthly[key]) D.monthly[key]={
+    blog:Array.from({length:5},()=>({done:false,url:'',date:''})),
+    insta:Array.from({length:5},()=>({done:false,url:'',date:''})),
+    point:Array.from({length:4},()=>({done:false,url:'',date:''})),
+    cafe:[]
+  }
+  Object.keys(MLY_FIXED_COUNTS).forEach(t=>{
+    const n=MLY_FIXED_COUNTS[t]
+    if(!D.monthly[key][t]) D.monthly[key][t]=Array.from({length:n},()=>({done:false,url:'',date:''}))
+    while(D.monthly[key][t].length<n) D.monthly[key][t].push({done:false,url:'',date:''})
   })
+  if(!D.monthly[key].cafe) D.monthly[key].cafe=[]
 }
 
 function toggleMonthly(key,type,idx){
@@ -906,10 +915,56 @@ function toggleMonthly(key,type,idx){
 
 function saveMonthlyUrl(key,type,idx,val){
   ensureMonthly(key)
+  const item=D.monthly[key][type][idx]
   const v=val.trim()
-  D.monthly[key][type][idx].url=v
-  D.monthly[key][type][idx].done=v!==''
+  const wasDone=item.done
+  item.url=v
+  item.done=v!==''
+  if(item.done&&!wasDone) item.date=TODAY_STR
+  if(!item.done) item.date=''
   sv();render()
+}
+
+function addCafeItem(key){
+  ensureMonthly(key)
+  D.monthly[key].cafe.push({done:false,url:'',amount:0,date:''})
+  sv();render()
+}
+
+function delCafeItem(key,idx){
+  ensureMonthly(key)
+  D.monthly[key].cafe.splice(idx,1)
+  sv();render()
+}
+
+function saveCafeItem(key,idx,urlVal,amountVal){
+  ensureMonthly(key)
+  const item=D.monthly[key].cafe[idx]
+  if(!item) return
+  const v=(urlVal||'').trim()
+  const wasDone=item.done
+  item.url=v
+  item.amount=Number(amountVal)||0
+  item.done=v!==''
+  if(item.done&&!wasDone) item.date=TODAY_STR
+  if(!item.done) item.date=''
+  sv();render()
+}
+
+function monthlyEarnedByDate(){
+  const map={}
+  const RATE={blog:2000,insta:1000,point:500}
+  Object.values(D.monthly||{}).forEach(data=>{
+    ;['blog','insta','point'].forEach(t=>{
+      (data[t]||[]).forEach(item=>{
+        if(item.done&&item.date) map[item.date]=(map[item.date]||0)+RATE[t]
+      })
+    })
+    ;(data.cafe||[]).forEach(item=>{
+      if(item.done&&item.date) map[item.date]=(map[item.date]||0)+(item.amount||0)
+    })
+  })
+  return map
 }
 
 function saveJwLink(type,val){
@@ -967,6 +1022,7 @@ function rJwedding(){
   const daysInMonth=new Date(year,month+1,0).getDate()
   const dayHeaders=['일','월','화','수','목','금','토'].map(d=>'<div class="cal-head-day">'+d+'</div>').join('')
   let cells=''
+  const mEarnedMap=monthlyEarnedByDate()
   for(let i=0;i<firstDay;i++) cells+='<div class="cal-cell other-month"></div>'
   for(let d=1;d<=daysInMonth;d++){
     const ds=year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0')
@@ -980,7 +1036,7 @@ function rJwedding(){
     if(doneCount===total) cls+=' both'
     else if(doneCount>=2) cls+=' post-only'
     else if(doneCount===1) cls+=' comment-only'
-    const earned=postsDone*500+cmtDone*1500
+    const earned=postsDone*500+cmtDone*1500+(mEarnedMap[ds]||0)
     const earnedStr=earned>0?'<div style="font-size:9px;margin-top:1px;opacity:.9;letter-spacing:-.01em">'+(earned>=1000?(earned/1000)+'천':''+earned)+'</div>':''
     cells+='<div class="'+cls+'">'+d+earnedStr+'</div>'
   }
@@ -1003,10 +1059,11 @@ function rJwedding(){
   ${(()=>{
     const mlyKey=mlyYear+'-'+String(mlyMonth+1).padStart(2,'0')
     const mlyLabel=mlyYear+'년 '+(mlyMonth+1)+'월'
-    const md=D.monthly&&D.monthly[mlyKey]?D.monthly[mlyKey]:{blog:Array.from({length:5},()=>({done:false,url:''})),insta:Array.from({length:5},()=>({done:false,url:''}))}
-    const RATE={blog:2000,insta:1000}
+    const md=D.monthly&&D.monthly[mlyKey]?D.monthly[mlyKey]:{blog:Array.from({length:5},()=>({done:false,url:''})),insta:Array.from({length:5},()=>({done:false,url:''})),point:Array.from({length:4},()=>({done:false,url:''})),cafe:[]}
+    const RATE={blog:2000,insta:1000,point:500}
     const mkCol=(type,label)=>{
-      const items=(md[type]||[]).concat(Array.from({length:5},()=>({done:false,url:''}))).slice(0,5)
+      const n=MLY_FIXED_COUNTS[type]
+      const items=(md[type]||[]).concat(Array.from({length:n},()=>({done:false,url:''}))).slice(0,n)
       const cnt=items.filter(i=>i.done).length
       const earned=cnt*RATE[type]
       const rows=items.map((item,idx)=>{
@@ -1018,17 +1075,35 @@ function rJwedding(){
           +'<button class="btn sm" onclick="saveMonthlyUrl(\''+mlyKey+'\',\''+type+'\','+idx+',document.getElementById(\''+uid+'\').value)" style="flex-shrink:0;padding:4px 8px;font-size:11px">저장</button>'
           +'</div>'
       }).join('')
-      return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12px;font-weight:600">'+label+'<span style="font-size:10px;color:var(--tm);margin-left:6px">1건 '+RATE[type].toLocaleString()+'원</span></div><div style="font-size:11px;color:'+(cnt>0?'var(--ok)':'var(--tm)')+'">'+cnt+'/5 · <span style="color:var(--ok);font-weight:600">'+earned.toLocaleString()+'원</span></div></div>'+rows+'</div>'
+      return'<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12px;font-weight:600">'+label+'<span style="font-size:10px;color:var(--tm);margin-left:6px">1건 '+RATE[type].toLocaleString()+'원</span></div><div style="font-size:11px;color:'+(cnt>0?'var(--ok)':'var(--tm)')+'">'+cnt+'/'+n+' · <span style="color:var(--ok);font-weight:600">'+earned.toLocaleString()+'원</span></div></div>'+rows+'</div>'
     }
+    const cafeItems=md.cafe||[]
+    const cafeTotal=cafeItems.reduce((s,i)=>s+(i.done?(i.amount||0):0),0)
+    const cafeRows=cafeItems.map((item,idx)=>{
+      const uid='mly-cafe-'+idx, uidAmt=uid+'-amt'
+      return'<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--b)">'
+        +'<span style="font-size:11px;width:20px;flex-shrink:0;color:'+(item.done?'var(--ok)':'var(--tm)')+'">'+(item.done?'✓':'#'+(idx+1))+'</span>'
+        +'<input class="jw-url-input" id="'+uid+'" style="flex:1;margin-top:0;font-size:11px;padding:5px 8px" placeholder="링크" value="'+(item.url||'')+'"/>'
+        +'<input class="jw-url-input" id="'+uidAmt+'" type="number" style="width:84px;margin-top:0;font-size:11px;padding:5px 8px" placeholder="적립액" value="'+(item.amount||'')+'"/>'
+        +(item.url?'<a href="'+item.url+'" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--a);text-decoration:none;flex-shrink:0">↗</a>':'')
+        +'<button class="btn sm" onclick="saveCafeItem(\''+mlyKey+'\','+idx+',document.getElementById(\''+uid+'\').value,document.getElementById(\''+uidAmt+'\').value)" style="flex-shrink:0;padding:4px 8px;font-size:11px">저장</button>'
+        +'<button class="btn sm" onclick="delCafeItem(\''+mlyKey+'\','+idx+')" style="flex-shrink:0;padding:4px 8px;font-size:11px;color:var(--no)">삭제</button>'
+        +'</div>'
+    }).join('')
+    const cafeCard='<div class="card" style="margin-bottom:22px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:12px;font-weight:600">카페 랜덤이벤트</div><div style="font-size:11px;color:'+(cafeTotal>0?'var(--ok)':'var(--tm)')+'">'+cafeItems.length+'건'+(cafeTotal>0?' · <span style="color:var(--ok);font-weight:600">'+cafeTotal.toLocaleString()+'원</span>':'')+'</div></div>'
+      +cafeRows
+      +'<button class="btn sm" onclick="addCafeItem(\''+mlyKey+'\')" style="margin-top:8px;font-size:11px">+ 이벤트 추가</button></div>'
     const blogCnt=(md.blog||[]).filter(i=>i.done).length
     const instaCnt=(md.insta||[]).filter(i=>i.done).length
-    const totalMly=blogCnt*2000+instaCnt*1000
+    const pointCnt=(md.point||[]).filter(i=>i.done).length
+    const totalMly=blogCnt*2000+instaCnt*1000+pointCnt*500+cafeTotal
     return'<div style="margin-bottom:22px">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
-      +'<div style="display:flex;align-items:center;gap:10px"><div class="stit" style="margin:0">블로그 & 인스타 월간</div>'+(totalMly>0?'<span style="font-size:11px;color:var(--ok);font-weight:600">+'+totalMly.toLocaleString()+'원</span>':'')+'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px"><div class="stit" style="margin:0">블로그·인스타·포인트인증 월간</div>'+(totalMly>0?'<span style="font-size:11px;color:var(--ok);font-weight:600">+'+totalMly.toLocaleString()+'원</span>':'')+'</div>'
       +'<div style="display:flex;align-items:center;gap:8px"><button class="cal-nav-btn" onclick="mlyMove(-1)">‹</button><span style="font-size:13px;font-family:\'Palatino Linotype\',Palatino,Georgia,serif">'+mlyLabel+'</span><button class="cal-nav-btn" onclick="mlyMove(1)">›</button></div>'
       +'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+mkCol('blog','블로그')+mkCol('insta','인스타')+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">'+mkCol('blog','블로그')+mkCol('insta','인스타')+mkCol('point','포인트인증')+'</div>'
+      +cafeCard
       +'</div>'
   })()}
   <div class="jw-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px">
