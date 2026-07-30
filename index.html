@@ -973,6 +973,23 @@ function saveJwLink(type,val){
   D.settings.jwLinks[type]=val;sv()
 }
 
+function totalEarnedAll(){
+  let total=0
+  Object.values(D.jwedding||{}).forEach(data=>{
+    const postsDone=[data.p1,data.p2,data.p3].filter(p=>p&&p.done).length
+    const cmtDone=data.comment?1:0
+    total+=postsDone*500+cmtDone*1500
+  })
+  const RATE={blog:2000,insta:1000,point:500}
+  Object.values(D.monthly||{}).forEach(data=>{
+    ;['blog','insta','point'].forEach(t=>{
+      (data[t]||[]).forEach(item=>{if(item.done) total+=RATE[t]})
+    })
+    ;(data.cafe||[]).forEach(item=>{if(item.done) total+=(item.amount||0)})
+  })
+  return total
+}
+
 function rJwedding(){
   const links=D.settings.jwLinks||{cafe:'',points:''}
   const mkLink=(key,label,icon)=>{
@@ -1052,7 +1069,11 @@ function rJwedding(){
     ${m.content?'<div style="font-size:12px;color:var(--tm);margin-top:8px;line-height:1.6;white-space:pre-wrap">'+m.content+'</div>':''}
   </div>`).join('')
 
-  return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+  return`<div class="card" style="text-align:center;padding:24px;margin-bottom:18px">
+    <div class="sl">지금까지 총</div>
+    <div class="sv g" style="font-size:40px">${totalEarnedAll().toLocaleString()}원</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
     ${mkLink('cafe','카페 바로가기','☕')}
     ${mkLink('points','사이트 적립 바로가기','⭐')}
   </div>
