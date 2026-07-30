@@ -45,7 +45,7 @@ D.monthly['2026-06'] = {
   blog:  [{done:false, url:'', date:''}, ...],  // 5개, 1건 2000원
   insta: [{done:false, url:'', date:''}, ...],  // 5개, 1건 1000원
   point: [{done:false, url:'', date:''}, ...],  // 4개, 1건 500원 (포인트인증)
-  cafe:  [{done:false, url:'', amount:0, date:''}, ...]  // 가변 길이, 항목별 적립액 직접 입력 (카페 랜덤이벤트, 횟수·금액 매달 다름)
+  cafe:  [{done:false, url:'', amount:0, date:'', content:''}, ...]  // 가변 길이, 항목별 내용/적립액 직접 입력 (카페 랜덤이벤트, 횟수·금액 매달 다름). done은 content 입력 여부로 결정
 }
 ```
 - `date`: 링크 입력으로 처음 완료 처리된 날짜(YYYY-MM-DD). 완료 취소 시 초기화. 달력 일일 칸의 적립액 표시에 합산됨 (`monthlyEarnedByDate()`)

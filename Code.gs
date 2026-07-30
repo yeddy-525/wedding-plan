@@ -231,7 +231,7 @@ function writeJwedding(ss, jwedding) {
 
 // ── 블로그/인스타 월간 체크 ───────────────────────────────────────────────
 
-const MLY_FIELDS = ['month','type','idx','done','url','amount','date']
+const MLY_FIELDS = ['month','type','idx','done','url','amount','date','content']
 const MLY_FIXED_COUNTS = {blog:5, insta:5, point:4}
 
 function readMonthly(ss) {
@@ -240,7 +240,7 @@ function readMonthly(ss) {
   if (!sh || sh.getLastRow() < 2) return result
   sh.getRange(2, 1, sh.getLastRow() - 1, MLY_FIELDS.length).getValues()
     .filter(r => r[0]).forEach(r => {
-      const [month, type, idx, done, url, amount, date] = r
+      const [month, type, idx, done, url, amount, date, content] = r
       if (!result[month]) result[month] = {
         blog : Array.from({length:5}, () => ({done:false, url:'', date:''})),
         insta: Array.from({length:5}, () => ({done:false, url:'', date:''})),
@@ -249,13 +249,13 @@ function readMonthly(ss) {
       }
       const isDone = done===true||done==='true'
       if (type === 'cafe') {
-        result[month].cafe[idx] = {done: isDone, url: url||'', amount: Number(amount)||0, date: date||''}
+        result[month].cafe[idx] = {done: isDone, url: url||'', amount: Number(amount)||0, date: date||'', content: content||''}
       } else if (result[month][type] && idx >= 0 && idx < MLY_FIXED_COUNTS[type]) {
         result[month][type][idx] = {done: isDone, url: url||'', date: date||''}
       }
     })
   Object.keys(result).forEach(month => {
-    result[month].cafe = Array.from(result[month].cafe, x => x || {done:false, url:'', amount:0, date:''})
+    result[month].cafe = Array.from(result[month].cafe, x => x || {done:false, url:'', amount:0, date:'', content:''})
   })
   return result
 }
@@ -268,11 +268,11 @@ function writeMonthly(ss, monthly) {
   Object.entries(monthly).forEach(([month, data]) => {
     ;['blog','insta','point'].forEach(type => {
       (data[type] || []).forEach((item, idx) => {
-        rows.push([month, type, idx, item.done||false, item.url||'', '', item.date||''])
+        rows.push([month, type, idx, item.done||false, item.url||'', '', item.date||'', ''])
       })
     })
     ;(data.cafe || []).forEach((item, idx) => {
-      rows.push([month, 'cafe', idx, item.done||false, item.url||'', item.amount||0, item.date||''])
+      rows.push([month, 'cafe', idx, item.done||false, item.url||'', item.amount||0, item.date||'', item.content||''])
     })
   })
   if (rows.length > 0)

@@ -927,7 +927,7 @@ function saveMonthlyUrl(key,type,idx,val){
 
 function addCafeItem(key){
   ensureMonthly(key)
-  D.monthly[key].cafe.push({done:false,url:'',amount:0,date:''})
+  D.monthly[key].cafe.push({done:false,url:'',amount:0,date:'',content:''})
   sv();render()
 }
 
@@ -937,15 +937,17 @@ function delCafeItem(key,idx){
   sv();render()
 }
 
-function saveCafeItem(key,idx,urlVal,amountVal){
+function saveCafeItem(key,idx,contentVal,urlVal,amountVal){
   ensureMonthly(key)
   const item=D.monthly[key].cafe[idx]
   if(!item) return
+  const c=(contentVal||'').trim()
   const v=(urlVal||'').trim()
   const wasDone=item.done
+  item.content=c
   item.url=v
   item.amount=Number(amountVal)||0
-  item.done=v!==''
+  item.done=c!==''
   if(item.done&&!wasDone) item.date=TODAY_STR
   if(!item.done) item.date=''
   sv();render()
@@ -1080,13 +1082,14 @@ function rJwedding(){
     const cafeItems=md.cafe||[]
     const cafeTotal=cafeItems.reduce((s,i)=>s+(i.done?(i.amount||0):0),0)
     const cafeRows=cafeItems.map((item,idx)=>{
-      const uid='mly-cafe-'+idx, uidAmt=uid+'-amt'
+      const uid='mly-cafe-'+idx, uidUrl=uid+'-url', uidAmt=uid+'-amt'
       return'<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--b)">'
         +'<span style="font-size:11px;width:20px;flex-shrink:0;color:'+(item.done?'var(--ok)':'var(--tm)')+'">'+(item.done?'✓':'#'+(idx+1))+'</span>'
-        +'<input class="jw-url-input" id="'+uid+'" style="flex:1;margin-top:0;font-size:11px;padding:5px 8px" placeholder="링크" value="'+(item.url||'')+'"/>'
+        +'<input class="jw-url-input" id="'+uid+'" style="flex:1.4;margin-top:0;font-size:11px;padding:5px 8px" placeholder="어떤 내용" value="'+(item.content||'')+'"/>'
+        +'<input class="jw-url-input" id="'+uidUrl+'" style="flex:1;margin-top:0;font-size:11px;padding:5px 8px" placeholder="링크" value="'+(item.url||'')+'"/>'
         +'<input class="jw-url-input" id="'+uidAmt+'" type="number" style="width:84px;margin-top:0;font-size:11px;padding:5px 8px" placeholder="적립액" value="'+(item.amount||'')+'"/>'
         +(item.url?'<a href="'+item.url+'" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:var(--a);text-decoration:none;flex-shrink:0">↗</a>':'')
-        +'<button class="btn sm" onclick="saveCafeItem(\''+mlyKey+'\','+idx+',document.getElementById(\''+uid+'\').value,document.getElementById(\''+uidAmt+'\').value)" style="flex-shrink:0;padding:4px 8px;font-size:11px">저장</button>'
+        +'<button class="btn sm" onclick="saveCafeItem(\''+mlyKey+'\','+idx+',document.getElementById(\''+uid+'\').value,document.getElementById(\''+uidUrl+'\').value,document.getElementById(\''+uidAmt+'\').value)" style="flex-shrink:0;padding:4px 8px;font-size:11px">저장</button>'
         +'<button class="btn sm" onclick="delCafeItem(\''+mlyKey+'\','+idx+')" style="flex-shrink:0;padding:4px 8px;font-size:11px;color:var(--no)">삭제</button>'
         +'</div>'
     }).join('')
