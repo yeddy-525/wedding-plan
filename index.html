@@ -168,6 +168,9 @@ html,body{height:100%}
 .tl-del{background:none;border:none;color:var(--tm);cursor:pointer;font-size:14px;padding:0 2px;opacity:0;transition:opacity .1s}
 .tlt:hover .tl-del{opacity:1}
 .tl-del:hover{color:var(--no)}
+.tl-edit{background:none;border:none;color:var(--tm);cursor:pointer;font-size:13px;padding:0 2px;opacity:0;transition:opacity .1s}
+.tlt:hover .tl-edit{opacity:1}
+.tl-edit:hover{color:var(--a)}
 .tl-add-row{display:flex;gap:6px;margin-top:6px;padding:0 2px}
 .tl-add-input{flex:1;padding:6px 10px;background:var(--g);border:1px solid var(--b);border-radius:7px;color:var(--t);font-size:12px;font-family:inherit;outline:none}
 .tl-add-input:focus{border-color:var(--a)}
@@ -289,7 +292,7 @@ html,body{height:100%}
   .ph{padding:12px 16px}
 }
 @media(hover:none){
-  .edit-btn,.tdel,.tl-del,.exp-del,.exp-edit{opacity:1}
+  .edit-btn,.tdel,.tl-del,.tl-edit,.exp-del,.exp-edit{opacity:1}
 }
 .jw-toggle.on{background:var(--a)}
 .jw-toggle.on::after{left:19px}
@@ -671,6 +674,19 @@ function allV(cat){return D.vendors[cat]||[]}
 function flatV(){return Object.values(D.vendors).flat()}
 function totalSpent(){return D.expenses.reduce((s,e)=>s+e.amount,0)}
 
+// 타임라인 항목의 cat(예: '웨딩홀','스튜디오','청첩장')에 확정된 업체를 연결
+function linkedVendorLabel(cat){
+  if(cat==='전체') return ''
+  const catKey=Object.keys(CN).find(k=>CN[k]===cat)
+  let matches
+  if(catKey&&catKey!=='etc'){
+    matches=(D.vendors[catKey]||[]).filter(v=>v.status==='확정')
+  } else {
+    matches=(D.vendors.etc||[]).filter(v=>v.status==='확정'&&(v.tags||[]).some(t=>t.includes(cat)||cat.includes(t)))
+  }
+  return matches.length?'→ '+matches.map(v=>v.name).join(', '):''
+}
+
 // 현재 타임라인 단계 계산
 function currentTlPhase(){
   const wd=new Date(D.settings.weddingDate)
@@ -679,6 +695,8 @@ function currentTlPhase(){
   for(const m of D.tl){
     if(m.mb>=monthsLeft) cur=m.id
   }
+  // 결혼식이 12개월(가장 이른 구간)보다도 많이 남았으면, 첫 구간을 미리보기로 보여줌
+  if(cur===null&&D.tl.length) cur=D.tl[0].id
   return cur
 }
 
@@ -737,23 +755,25 @@ function rDash(){
   const topCats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,3)
     .map(([c,a])=>'<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--b)"><span style="font-size:11px;color:var(--tm)">'+c+'</span><span style="font-size:12px;font-weight:600">'+fp(a)+'</span></div>').join('')
 
-  const tasks=D.tasks.map(t=>`
-    <div class="ti ${t.dn?'dn':''}" onclick="toggleTask(${t.id})">
-      <div class="tck">${t.dn?'✓':''}</div>
-      <span class="tt">${t.text}</span>
-      <span class="td">${t.date||''}</span>
-      <button class="tdel" onclick="event.stopPropagation();deleteTask(${t.id})">×</button>
-    </div>`).join('')
-
-  const confVendors=Object.entries(D.vendors).flatMap(([cat,vs])=>vs.filter(v=>v.status==='확정').map(v=>({...v,cat})))
-  const confSection=confVendors.length?`<div class="card" style="margin-bottom:18px">
-    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--tm);margin-bottom:10px">확정 업체</div>
-    ${confVendors.map(v=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--b);cursor:pointer" onclick="go('${v.cat}')">
-      <span style="font-size:11px;color:var(--tm);width:52px;flex-shrink:0">${CN[v.cat]||v.cat}</span>
-      <span style="font-size:13px;font-weight:600;flex:1">${v.name}</span>
-      ${v.confirmedAt?`<span style="font-size:10px;color:var(--ok);flex-shrink:0">✓ ${fmtTs(v.confirmedAt)}</span>`:''}
-    </div>`).join('')}
-  </div>`:'';
+  const curPhase=currentTlPhase()
+  const curMIdx=D.tl.findIndex(m=>m.id===curPhase)
+  const curM=curMIdx>-1?D.tl[curMIdx]:null
+  const nextM=curMIdx>-1?D.tl[curMIdx+1]:null
+  const tlItemHtml=t=>{
+    const linked=linkedVendorLabel(t.cat)
+    return`<div class="tlt ${t.dn?'dn':''}" onclick="toggleTl(${t.id})">
+      <div class="tlck">${t.dn?'✓':''}</div>
+      <span class="tltxt">${t.text}</span>
+      ${linked?'<span style="font-size:10px;color:var(--ok);font-weight:600;flex-shrink:0">'+linked+'</span>':''}
+      <span class="tlcat">${t.cat}</span>
+    </div>`
+  }
+  const undoneHtml=curM?curM.tasks.filter(t=>!t.dn).map(tlItemHtml).join(''):''
+  const doneHtml=curM?curM.tasks.filter(t=>t.dn).map(tlItemHtml).join(''):''
+  const nextPreviewHtml=nextM?nextM.tasks.map(t=>{
+    const linked=linkedVendorLabel(t.cat)
+    return'<div style="font-size:12px;color:var(--tm);padding:6px 0;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;gap:8px"><span>'+t.text+'</span>'+(linked?'<span style="color:var(--ok);font-weight:600;flex-shrink:0">'+linked+'</span>':'')+'</div>'
+  }).join(''):''
 
   return`<div class="sg">
     <div class="sc"><div class="sl">확정</div><div class="sv g">${conf}</div><div class="sd">업체</div></div>
@@ -766,26 +786,13 @@ function rDash(){
       <div style="font-size:10px;color:var(--a);margin-top:8px">→ 전체 내역 보기</div>
     </div>
   </div>
-  ${confSection}
   <div class="stit">타임라인 — ${tlDone}/${tlAll.length} 완료 (${tlPct}%)</div>
   <div class="pb" style="height:5px;margin-bottom:20px"><div class="pf" style="width:${tlPct}%"></div></div>
-  <div class="two">
-    <div>
-      <div class="task-header">
-        <div class="stit" style="margin:0">이번 주 할 일</div>
-        <button class="btn sm" onclick="openAddTask()">+ 추가</button>
-      </div>
-      <div class="card" style="margin-top:11px">${tasks||'<div style="font-size:12px;color:var(--tm);padding:8px">할 일을 추가해보세요</div>'}</div>
-    </div>
-    <div><div class="stit">최근 활동</div><div class="card">${
-      D.log.slice(0,8).map(e=>{
-        const dot=e.type==='vendor_status_확정'||e.type==='task_done'||e.type==='tl_done'?'g':e.type==='vendor_status_탈락'?'r':''
-        const _d=new Date(e.id),_p=n=>String(n).padStart(2,'0')
-        const relDate=_d.getFullYear().toString().slice(2)+'-'+_p(_d.getMonth()+1)+'-'+_p(_d.getDate())+' '+_p(_d.getHours())+':'+_p(_d.getMinutes())
-        return'<div class="ai"><div class="ad '+dot+'"></div><div class="ab"><div class="an">'+e.text+'</div>'+(e.detail?'<div class="adet">'+e.detail+'</div>':'')+'</div><div class="at">'+relDate+'</div></div>'
-      }).join('')||'<div style="font-size:12px;color:var(--tm);padding:4px">아직 활동 기록이 없어요</div>'
-    }</div></div>
-  </div>
+  ${curM?`<div class="stit">지금 해야 할 일 — ${curM.mo}</div>
+  <div class="card" style="margin-bottom:18px">${undoneHtml||'<div style="font-size:12px;color:var(--tm);padding:8px">이번 달 할 일을 다 끝냈어요 🎉</div>'}</div>
+  ${doneHtml?`<div class="stit">한 일</div><div class="card" style="margin-bottom:18px">${doneHtml}</div>`:''}
+  ${nextM?`<div class="stit">앞으로 할 일 — ${nextM.mo}</div><div class="card" style="margin-bottom:18px">${nextPreviewHtml}</div>`:''}`
+  :`<div class="card" style="margin-bottom:18px;text-align:center;padding:24px;color:var(--tm);font-size:12px">지금 시점에 해당하는 타임라인 구간이 없어요.</div>`}
   <div style="margin-top:18px">
     <div class="task-header">
       <div class="stit" style="margin:0">나중에 볼 자료</div>
@@ -885,6 +892,7 @@ function rTl(){
       <div class="tlck">${t.dn?'✓':''}</div>
       <span class="tltxt">${t.text}</span>
       <span class="tlcat">${t.cat}</span>
+      <button class="tl-edit" onclick="event.stopPropagation();editTlTask(${t.id})" title="수정">✎</button>
       <button class="tl-del" onclick="event.stopPropagation();deleteTlTask(${t.id})" title="삭제">×</button>
     </div>`).join('')
 
@@ -1362,6 +1370,28 @@ function addTlTask(monthId){
   const m=D.tl.find(m=>m.id===monthId);if(!m)return
   m.tasks.push({id:Date.now(),text,cat:'기타',dn:false})
   sv();render()
+}
+
+function findTlTask(id){
+  for(const m of D.tl){const t=m.tasks.find(t=>t.id===id);if(t)return t}
+  return null
+}
+
+function editTlTask(id){
+  const t=findTlTask(id);if(!t)return
+  document.getElementById('mbox').innerHTML=`<div class="mtit">할 일 수정</div>
+    <div class="fg"><label class="fl">내용 *</label><input class="fi" id="tlt-text" value="${t.text}"/></div>
+    <div class="fg"><label class="fl">카테고리</label><input class="fi" id="tlt-cat" value="${t.cat||''}"/></div>
+    <div class="ma"><button class="btn danger" onclick="deleteTlTask(${id});closeModal()">삭제</button><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitTlTaskEdit(${id})">저장</button></div>`
+  document.getElementById('modal').style.display='flex'
+}
+
+function submitTlTaskEdit(id){
+  const t=findTlTask(id);if(!t)return
+  const text=document.getElementById('tlt-text').value.trim();if(!text)return
+  t.text=text
+  t.cat=document.getElementById('tlt-cat').value.trim()||'기타'
+  sv();closeModal();render()
 }
 
 function updNC(){
