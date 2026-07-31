@@ -364,7 +364,22 @@ const TODAY = new Date(TODAY_STR)
 
 const STS = ['후보','검토중','확정','탈락']
 const CN  = {hall:'웨딩홀',studio:'스튜디오',makeup:'메이크업',dress:'드레스',etc:'기타'}
-const TL_MONTHS = [12,10,8,6,4,2,1,0.25] // 각 섹션의 결혼 전 개월 수
+const TL_MONTHS = [12,11,10,9,8,7,6,5,4,3,2,1,0.25] // 각 섹션의 결혼 전 개월 수 (매달 하나씩, 마지막은 1주일 전)
+
+// 12개월 전부터 매달 구간이 다 있도록 빠진 달을 채워 넣음 (기존 구간/할 일은 그대로 둠)
+function ensureTlMonths(){
+  if(!D.tl) D.tl=[]
+  const existingMb=new Set(D.tl.map(m=>m.mb))
+  let maxId=D.tl.reduce((mx,m)=>Math.max(mx,m.id||0),0)
+  TL_MONTHS.forEach(mb=>{
+    if(!existingMb.has(mb)){
+      maxId++
+      const mo=mb===0.25?'결혼 1주일 전':'결혼 '+mb+'개월 전'
+      D.tl.push({id:maxId,mo,mb,tasks:[]})
+    }
+  })
+  D.tl.sort((a,b)=>b.mb-a.mb)
+}
 
 function fp(n){
   if(!n)return'-'
@@ -515,6 +530,7 @@ function applyRemote(remote){
   normalizeVendors(D.vendors)
   if(!D.log) D.log=[]
   D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
+  ensureTlMonths()
   try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
   updDday();updNC();render()
 }
@@ -652,8 +668,10 @@ if(!D.monthly) D.monthly={}
 D.monthly=normalizeMonthly(D.monthly)
 if(!D.jwedding) D.jwedding={}
 D.jwedding=normalizeJwedding(D.jwedding)
+normalizeVendors(D.vendors)
 if(!D.log) D.log=[]
 D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
+ensureTlMonths()
 // 구버전 jwedding 데이터 마이그레이션 (post → p1/p2/p3)
 Object.keys(D.jwedding).forEach(date=>{
   const d=D.jwedding[date]
