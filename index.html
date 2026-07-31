@@ -729,7 +729,8 @@ function confirmedLabels(){
 // 타임라인 카테고리 입력용 자동완성 후보 (업체 태그 + 업체 카테고리명 + 이미 쓰인 타임라인 카테고리)
 function tagSuggestions(){
   const s=new Set()
-  Object.values(D.vendors).flat().forEach(v=>(v.tags||[]).forEach(t=>s.add(t)))
+  // 기타 업체의 tags(종류)만 포함 — 다른 카테고리 태그는 특징 설명이라 분류용으로 안 맞음
+  (D.vendors.etc||[]).forEach(v=>(v.tags||[]).forEach(t=>s.add(t)))
   Object.values(CN).forEach(c=>s.add(c))
   D.tl.forEach(m=>m.tasks.forEach(t=>{if(t.cat)s.add(t.cat)}))
   return[...s]
