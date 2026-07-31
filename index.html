@@ -123,6 +123,7 @@ html,body{height:100%}
 .vm{font-size:11px;color:var(--tm);margin-bottom:9px;display:flex;gap:12px}
 .vtags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
 .vtag{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--s2);color:var(--tm)}
+.vtag.conf{background:rgba(46,171,116,.13);color:var(--ok);font-weight:600}
 .vnote{font-size:11px;color:var(--tm);line-height:1.5;border-top:1px solid var(--b);padding-top:9px}
 .vpay{font-size:11px;border-top:1px solid var(--b);padding-top:9px;margin-top:9px;display:flex;flex-direction:column;gap:5px}
 .vpay-row{display:flex;justify-content:space-between;align-items:center}
@@ -713,6 +714,18 @@ function statusLabels(status){
   return[...labels]
 }
 
+// 확정은 카테고리당 보통 하나뿐이라 업체명까지 붙여서 보여줌
+function confirmedLabels(){
+  const out=[]
+  Object.entries(D.vendors).forEach(([cat,vs])=>{
+    vs.filter(v=>v.status==='확정').forEach(v=>{
+      const label=cat==='etc'?((v.tags||[])[0]||'기타'):(CN[cat]||cat)
+      out.push(label+': '+v.name)
+    })
+  })
+  return out
+}
+
 // 타임라인 카테고리 입력용 자동완성 후보 (업체 태그 + 업체 카테고리명 + 이미 쓰인 타임라인 카테고리)
 function tagSuggestions(){
   const s=new Set()
@@ -784,8 +797,8 @@ function rDash(){
   const conf=all.filter(v=>v.status==='확정').length
   const rev=all.filter(v=>v.status==='검토중').length
   const cand=all.filter(v=>v.status==='후보').length
-  const labelPills=labels=>labels.length?labels.map(l=>'<span class="vtag">'+l+'</span>').join(''):''
-  const confLabels=labelPills(statusLabels('확정'))
+  const labelPills=(labels,cls)=>labels.length?'<div class="vtags">'+labels.map(l=>'<span class="vtag'+(cls?' '+cls:'')+'">'+l+'</span>').join('')+'</div>':''
+  const confLabels=labelPills(confirmedLabels(),'conf')
   const revLabels=labelPills(statusLabels('검토중'))
   const candLabels=labelPills(statusLabels('후보'))
   const spent=totalSpent()
