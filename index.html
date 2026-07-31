@@ -648,7 +648,7 @@ function updDday(){
 }
 updDday()
 
-let cur='dashboard',filt='all',stab='list',cmpMode=false,cmpSet=new Set(),addCat=null,editId=null
+let cur='dashboard',filt='all',tagFilt='all',stab='list',cmpMode=false,cmpSet=new Set(),addCat=null,editId=null
 
 const LOG_ICONS={vendor_add:'🔵',vendor_status_확정:'🟢',vendor_status_탈락:'🔴',vendor_status:'🔵',expense:'🟡',task_done:'🟢',tl_done:'🟢',task_add:'🔵',memo:'🔵'}
 function addLog(type,text,detail){
@@ -672,7 +672,7 @@ function currentTlPhase(){
 }
 
 function go(p){
-  cur=p;filt='all';stab='list';cmpMode=false;cmpSet.clear()
+  cur=p;filt='all';tagFilt='all';stab='list';cmpMode=false;cmpSet.clear()
   document.querySelectorAll('.ni').forEach(e=>e.classList.toggle('on',e.dataset.p===p))
   closeSidebar()
   closeCalPop()
@@ -799,14 +799,23 @@ function rVendors(cat){
   const vs=allV(cat)
   const statuses=[...new Set(vs.map(v=>v.status))]
   const chips=['all',...statuses].map(f=>`<button class="chip ${filt===f?'on':''}" onclick="setF('${f}')">${f==='all'?'전체 ('+vs.length+')':f+' ('+vs.filter(v=>v.status===f).length+')'}</button>`).join('')
+  let tagChips=''
+  if(cat==='etc'){
+    const allTags=[...new Set(vs.flatMap(v=>v.tags||[]))]
+    if(allTags.length){
+      const tc=['all',...allTags].map(t=>`<button class="chip ${tagFilt===t?'on':''}" onclick="setTagF('${t}')">${t==='all'?'전체 태그':t+' ('+vs.filter(v=>(v.tags||[]).includes(t)).length+')'}</button>`).join('')
+      tagChips='<div class="fb" style="margin-top:8px">'+tc+'</div>'
+    }
+  }
   let body=''
   if(stab==='compare'){
     const sel=vs.filter(v=>cmpSet.has(v.id))
     body=sel.length<2?'<div style="text-align:center;padding:40px;color:var(--tm);font-size:13px">카드 2개 이상 선택 후 비교하기를 누르세요.</div>':rCmpTbl(sel)
   } else {
-    const fil=filt==='all'?vs:vs.filter(v=>v.status===filt)
+    let fil=filt==='all'?vs:vs.filter(v=>v.status===filt)
+    if(cat==='etc'&&tagFilt!=='all') fil=fil.filter(v=>(v.tags||[]).includes(tagFilt))
     const cards=fil.length?fil.map(v=>rCard(v)).join(''):'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--tm);font-size:13px">이 상태의 업체가 없어요.</div>'
-    body=`<div class="fb">${chips}<label class="cmt"><input type="checkbox" ${cmpMode?'checked':''} onchange="setCmpMode(this.checked)"> 비교 선택 모드</label></div><div class="vg">${cards}</div>`
+    body=`<div class="fb">${chips}<label class="cmt"><input type="checkbox" ${cmpMode?'checked':''} onchange="setCmpMode(this.checked)"> 비교 선택 모드</label></div>${tagChips}<div class="vg">${cards}</div>`
   }
   return`<div class="stabs">
     <div class="stab ${stab==='list'?'on':''}" onclick="setST('list')">목록</div>
@@ -1272,6 +1281,7 @@ function rSettings(){
 
 // --- 액션들 ---
 function setF(f){filt=f;render()}
+function setTagF(t){tagFilt=t;render()}
 function setST(t){stab=t;render()}
 function setCmpMode(on){cmpMode=on;if(!on)cmpSet.clear();updCF();render()}
 function toggleSel(id){if(cmpSet.has(id))cmpSet.delete(id);else cmpSet.add(id);updCF();render()}
