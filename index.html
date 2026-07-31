@@ -995,26 +995,37 @@ function monthlyEarnedByDate(){
   return map
 }
 
-function dayDetail(ds){
-  const data=D.jwedding[ds]
+function calPopHtml(ds){
   const labels=D.settings.jwLabels||['글 1','글 2','글 3']
-  const rows=[]
-  if(data){
-    ;[data.p1,data.p2,data.p3].forEach((p,i)=>{
-      if(p&&p.done) rows.push(labels[i]+' 완료'+(p.url?' · <a href="'+p.url+'" target="_blank" onclick="event.stopPropagation()">↗</a>':''))
-    })
-    if(data.comment) rows.push('댓글 완료'+(data.commentUrl?' · <a href="'+data.commentUrl+'" target="_blank" onclick="event.stopPropagation()">↗</a>':''))
-  }
+  const d=D.jwedding[ds]||{p1:{done:false,url:''},p2:{done:false,url:''},p3:{done:false,url:''},comment:false,commentUrl:''}
+  const postRows=[0,1,2].map(i=>{
+    const p=d['p'+(i+1)]||{done:false,url:''}
+    const urlHtml=p.done
+      ?'<input class="jw-url-input" style="margin-top:4px;font-size:11px;padding:5px 8px" placeholder="링크 (선택)" value="'+(p.url||'')+'" oninput="saveJwUrl(\'post\','+i+',this.value,\''+ds+'\')" onclick="event.stopPropagation()"/>'
+      :''
+    return'<div class="cal-pop-row"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+      +'<span>'+labels[i]+'</span>'
+      +'<button class="jw-toggle '+(p.done?'on':'')+'" onclick="event.stopPropagation();toggleJw(\'post\','+i+',\''+ds+'\')"></button>'
+      +'</div>'+urlHtml+'</div>'
+  }).join('')
+  const commentUrlHtml=d.comment
+    ?'<input class="jw-url-input" style="margin-top:4px;font-size:11px;padding:5px 8px" placeholder="댓글 링크 (선택)" value="'+(d.commentUrl||'')+'" oninput="saveJwUrl(\'comment\',0,this.value,\''+ds+'\')" onclick="event.stopPropagation()"/>'
+    :''
+  const commentRow='<div class="cal-pop-row"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
+    +'<span>댓글</span>'
+    +'<button class="jw-toggle '+(d.comment?'on':'')+'" onclick="event.stopPropagation();toggleJw(\'comment\',0,\''+ds+'\')"></button>'
+    +'</div>'+commentUrlHtml+'</div>'
+  const mlyRows=[]
   const MLY_LABELS={blog:'블로그',insta:'인스타',point:'포인트인증'}
   Object.values(D.monthly||{}).forEach(md=>{
     ;['blog','insta','point'].forEach(t=>{
-      (md[t]||[]).forEach(item=>{if(item.done&&item.date===ds) rows.push(MLY_LABELS[t]+' 완료')})
+      (md[t]||[]).forEach(item=>{if(item.done&&item.date===ds) mlyRows.push(MLY_LABELS[t]+' 완료')})
     })
     ;(md.cafe||[]).forEach(item=>{
-      if(item.done&&item.date===ds) rows.push((item.content||'카페 이벤트')+' · <span style="color:var(--ok);font-weight:600">'+(item.amount||0).toLocaleString()+'원</span>')
+      if(item.done&&item.date===ds) mlyRows.push((item.content||'카페 이벤트')+' · <span style="color:var(--ok);font-weight:600">'+(item.amount||0).toLocaleString()+'원</span>')
     })
   })
-  return rows
+  return'<div class="cal-pop-title">'+ds+'</div>'+postRows+commentRow+mlyRows.map(r=>'<div class="cal-pop-row">'+r+'</div>').join('')
 }
 
 let _calPopDs=null
@@ -1023,8 +1034,7 @@ function toggleCalPop(ev,ds){
   const pop=document.getElementById('cal-pop')
   if(_calPopDs===ds){closeCalPop();return}
   _calPopDs=ds
-  const rows=dayDetail(ds)
-  pop.innerHTML='<div class="cal-pop-title">'+ds+'</div>'+(rows.length?rows.map(r=>'<div class="cal-pop-row">'+r+'</div>').join(''):'<div class="cal-pop-row" style="color:var(--tm)">기록 없음</div>')
+  pop.innerHTML=calPopHtml(ds)
   const cellRect=ev.currentTarget.getBoundingClientRect()
   pop.style.left=cellRect.left+'px'
   pop.style.top=(cellRect.bottom+6)+'px'
@@ -1038,6 +1048,11 @@ function toggleCalPop(ev,ds){
   if(top<8) top=8
   pop.style.left=left+'px'
   pop.style.top=top+'px'
+}
+function refreshCalPop(ds){
+  if(_calPopDs!==ds) return
+  const pop=document.getElementById('cal-pop')
+  if(pop) pop.innerHTML=calPopHtml(ds)
 }
 function closeCalPop(){
   _calPopDs=null
@@ -1444,23 +1459,27 @@ function delExpense(id){
 }
 
 
-function ensureJwDay(){
-  if(!D.jwedding[TODAY_STR]) D.jwedding[TODAY_STR]={p1:{done:false,url:''},p2:{done:false,url:''},p3:{done:false,url:''},comment:false,commentUrl:''}
-  const d=D.jwedding[TODAY_STR]
+function ensureJwDay(ds){
+  ds=ds||TODAY_STR
+  if(!D.jwedding[ds]) D.jwedding[ds]={p1:{done:false,url:''},p2:{done:false,url:''},p3:{done:false,url:''},comment:false,commentUrl:''}
+  const d=D.jwedding[ds]
   if(!d.p1) d.p1={done:false,url:''}
   if(!d.p2) d.p2={done:false,url:''}
   if(!d.p3) d.p3={done:false,url:''}
 }
 
-function toggleJw(type,idx){
-  ensureJwDay();const d=D.jwedding[TODAY_STR]
+function toggleJw(type,idx,ds){
+  ds=ds||TODAY_STR
+  ensureJwDay(ds);const d=D.jwedding[ds]
   if(type==='post') d['p'+(idx+1)].done=!d['p'+(idx+1)].done
   else d.comment=!d.comment
   sv();render()
+  refreshCalPop(ds)
 }
 
-function saveJwUrl(type,idx,val){
-  ensureJwDay();const d=D.jwedding[TODAY_STR]
+function saveJwUrl(type,idx,val,ds){
+  ds=ds||TODAY_STR
+  ensureJwDay(ds);const d=D.jwedding[ds]
   if(type==='post') d['p'+(idx+1)].url=val
   else d.commentUrl=val
   sv()
