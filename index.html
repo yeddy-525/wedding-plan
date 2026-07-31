@@ -213,8 +213,14 @@ html,body{height:100%}
 .cal-cell.post-only{background:rgba(74,143,224,.15);color:var(--a)}
 .cal-cell.comment-only{background:rgba(74,143,224,.08);color:var(--tm)}
 .cal-cell.other-month{opacity:.2}
+.cal-cell:not(.other-month){cursor:pointer}
 .cal-dots{display:flex;gap:3px;margin-top:2px}
 .cal-dot{width:4px;height:4px;border-radius:50%;background:currentColor}
+
+.cal-pop{position:fixed;z-index:250;background:var(--s);border:1px solid var(--b);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:10px 12px;max-width:220px;font-size:12px}
+.cal-pop-title{font-weight:700;margin-bottom:6px;font-family:"Palatino Linotype",Palatino,Georgia,serif}
+.cal-pop-row{padding:5px 0;border-top:1px solid var(--b);line-height:1.4}
+.cal-pop-row:first-child{border-top:none}
 
 /* GAS LOADING LOCK */
 #gas-lock{position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .3s}
@@ -340,6 +346,8 @@ html,body{height:100%}
   <div class="mbox" id="mbox"></div>
 </div>
 
+<div class="cal-pop" id="cal-pop" style="display:none"></div>
+
 <script>
 // 한국 시간 기준 오늘 날짜
 const TODAY_STR = new Date().toLocaleDateString('en-CA', {timeZone:'Asia/Seoul'})
@@ -442,7 +450,24 @@ function normalizeDateKeys(obj, fmt){
   })
   return out
 }
-function normalizeMonthly(m){return normalizeDateKeys(m,'month')}
+function normalizeItemDateStr(s){
+  if(!s) return ''
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  const d=new Date(s)
+  if(isNaN(d.getTime())) return ''
+  const p=n=>String(n).padStart(2,'0')
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())
+}
+function normalizeMonthly(m){
+  const out=normalizeDateKeys(m,'month')
+  Object.values(out).forEach(data=>{
+    ;['blog','insta','point'].forEach(t=>{
+      (data[t]||[]).forEach(item=>{if(item.date) item.date=normalizeItemDateStr(item.date)})
+    })
+    ;(data.cafe||[]).forEach(item=>{if(item.date) item.date=normalizeItemDateStr(item.date)})
+  })
+  return out
+}
 function normalizeJwedding(j){return normalizeDateKeys(j,'day')}
 
 function applyRemote(remote){
@@ -650,6 +675,7 @@ function go(p){
   cur=p;filt='all';stab='list';cmpMode=false;cmpSet.clear()
   document.querySelectorAll('.ni').forEach(e=>e.classList.toggle('on',e.dataset.p===p))
   closeSidebar()
+  closeCalPop()
   const expTotal=D.expenses.reduce((s,e)=>s+e.amount,0)
   const jwDays=Object.values(D.jwedding),jwPosts=jwDays.filter(d=>d.p1&&d.p1.done||d.p2&&d.p2.done||d.p3&&d.p3.done).length
   const titles={
@@ -969,6 +995,60 @@ function monthlyEarnedByDate(){
   return map
 }
 
+function dayDetail(ds){
+  const data=D.jwedding[ds]
+  const labels=D.settings.jwLabels||['글 1','글 2','글 3']
+  const rows=[]
+  if(data){
+    ;[data.p1,data.p2,data.p3].forEach((p,i)=>{
+      if(p&&p.done) rows.push(labels[i]+' 완료'+(p.url?' · <a href="'+p.url+'" target="_blank" onclick="event.stopPropagation()">↗</a>':''))
+    })
+    if(data.comment) rows.push('댓글 완료'+(data.commentUrl?' · <a href="'+data.commentUrl+'" target="_blank" onclick="event.stopPropagation()">↗</a>':''))
+  }
+  const MLY_LABELS={blog:'블로그',insta:'인스타',point:'포인트인증'}
+  Object.values(D.monthly||{}).forEach(md=>{
+    ;['blog','insta','point'].forEach(t=>{
+      (md[t]||[]).forEach(item=>{if(item.done&&item.date===ds) rows.push(MLY_LABELS[t]+' 완료')})
+    })
+    ;(md.cafe||[]).forEach(item=>{
+      if(item.done&&item.date===ds) rows.push((item.content||'카페 이벤트')+' · <span style="color:var(--ok);font-weight:600">'+(item.amount||0).toLocaleString()+'원</span>')
+    })
+  })
+  return rows
+}
+
+let _calPopDs=null
+function toggleCalPop(ev,ds){
+  ev.stopPropagation()
+  const pop=document.getElementById('cal-pop')
+  if(_calPopDs===ds){closeCalPop();return}
+  _calPopDs=ds
+  const rows=dayDetail(ds)
+  pop.innerHTML='<div class="cal-pop-title">'+ds+'</div>'+(rows.length?rows.map(r=>'<div class="cal-pop-row">'+r+'</div>').join(''):'<div class="cal-pop-row" style="color:var(--tm)">기록 없음</div>')
+  const cellRect=ev.currentTarget.getBoundingClientRect()
+  pop.style.left=cellRect.left+'px'
+  pop.style.top=(cellRect.bottom+6)+'px'
+  pop.style.display='block'
+  const popRect=pop.getBoundingClientRect()
+  let left=cellRect.left
+  if(left+popRect.width>window.innerWidth-8) left=window.innerWidth-popRect.width-8
+  if(left<8) left=8
+  let top=cellRect.bottom+6
+  if(top+popRect.height>window.innerHeight-8) top=cellRect.top-popRect.height-6
+  if(top<8) top=8
+  pop.style.left=left+'px'
+  pop.style.top=top+'px'
+}
+function closeCalPop(){
+  _calPopDs=null
+  const pop=document.getElementById('cal-pop')
+  if(pop) pop.style.display='none'
+}
+document.addEventListener('click',e=>{
+  const pop=document.getElementById('cal-pop')
+  if(pop&&pop.style.display==='block'&&!pop.contains(e.target)&&!e.target.closest('.cal-cell')) closeCalPop()
+})
+
 function saveJwLink(type,val){
   D.settings.jwLinks[type]=val;sv()
 }
@@ -1062,7 +1142,7 @@ function rJwedding(){
       return''+n
     }
     const earnedStr=earned>0?'<div style="font-size:9px;margin-top:1px;opacity:.9;letter-spacing:-.01em">'+fmtCal(earned)+'</div>':''
-    cells+='<div class="'+cls+'">'+d+earnedStr+'</div>'
+    cells+='<div class="'+cls+'" onclick="toggleCalPop(event,\''+ds+'\')">'+d+earnedStr+'</div>'
   }
 
   // 메모 목록
@@ -1450,6 +1530,7 @@ function calMove(dir){
   calMonth+=dir
   if(calMonth<0){calMonth=11;calYear--}
   if(calMonth>11){calMonth=0;calYear++}
+  closeCalPop()
   render()
 }
 

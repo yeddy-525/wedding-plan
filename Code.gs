@@ -275,8 +275,13 @@ function writeMonthly(ss, monthly) {
       rows.push([month, 'cafe', idx, item.done||false, item.url||'', item.amount||0, item.date||'', item.content||''])
     })
   })
-  if (rows.length > 0)
+  if (rows.length > 0) {
+    // month/date 컬럼은 "2026-07", "2026-07-30" 같은 문자열이 시트에서
+    // 날짜로 자동 변환되지 않도록 텍스트 서식을 강제한다
+    sh.getRange(2, 1, rows.length, 1).setNumberFormat('@')
+    sh.getRange(2, 7, rows.length, 1).setNumberFormat('@')
     sh.getRange(2, 1, rows.length, MLY_FIELDS.length).setValues(rows)
+  }
 }
 
 // ── 설정 ──────────────────────────────────────────────────────────────────
