@@ -948,6 +948,8 @@ function rTl(){
     const isPast=m.mb>monthsLeft+(m.mb===curPhase?0:0.5)&&m.id!==curPhase
     const isCurrent=m.id===curPhase
     const done=m.tasks.filter(t=>t.dn).length
+    const phaseDate=new Date(wd.getTime()-m.mb*30.5*24*60*60*1000)
+    const phaseLabel=phaseDate.getFullYear()+'년 '+(phaseDate.getMonth()+1)+'월'
 
     const tasks=m.tasks.map(t=>`<div class="tlt ${t.dn?'dn':''}" onclick="toggleTl(${t.id})">
       <div class="tlck">${t.dn?'✓':''}</div>
@@ -959,7 +961,7 @@ function rTl(){
 
     return`<div class="tlm ${isCurrent?'tl-current':isPast?'tl-past':''}">
       <div class="tlmh">
-        <span class="tml">${m.mo}</span>
+        <span class="tml">${m.mo} <span style="font-size:11px;color:var(--tm);font-weight:400">(${phaseLabel})</span></span>
         <span style="font-size:11px;color:var(--tm)">${done}/${m.tasks.length}</span>
       </div>
       <div class="tl-items-wrap">
