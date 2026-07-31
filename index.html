@@ -483,6 +483,16 @@ function normalizeMonthly(m){
   return out
 }
 function normalizeJwedding(j){return normalizeDateKeys(j,'day')}
+function normalizeVendors(vendors){
+  Object.values(vendors||{}).forEach(list=>{
+    (list||[]).forEach(v=>{
+      if(v.date) v.date=normalizeItemDateStr(v.date)
+      if(v.depositDate) v.depositDate=normalizeItemDateStr(v.depositDate)
+      if(v.balanceDate) v.balanceDate=normalizeItemDateStr(v.balanceDate)
+    })
+  })
+  return vendors
+}
 
 function applyRemote(remote){
   const localMonthly=D.monthly
@@ -501,6 +511,7 @@ function applyRemote(remote){
   if(!D.monthly||Object.keys(D.monthly).length===0) D.monthly=localMonthly||{}
   D.monthly=normalizeMonthly(D.monthly)
   D.jwedding=normalizeJwedding(D.jwedding)
+  normalizeVendors(D.vendors)
   if(!D.log) D.log=[]
   D.tl.forEach((m,i)=>{if(m.mb===undefined)m.mb=TL_MONTHS[i]||0})
   try{localStorage.setItem('wd',JSON.stringify(D))}catch{}
@@ -687,6 +698,21 @@ function linkedVendorLabel(cat){
   return matches.length?'→ '+matches.map(v=>v.name).join(', '):''
 }
 
+// 상태별(확정/검토중/후보) 카테고리 라벨 — 기타는 종류(tags)로, 나머지는 카테고리명으로, 중복 제거
+function statusLabels(status){
+  const labels=new Set()
+  Object.entries(D.vendors).forEach(([cat,vs])=>{
+    vs.filter(v=>v.status===status).forEach(v=>{
+      if(cat==='etc'){
+        (v.tags||[]).forEach(t=>labels.add(t))
+      } else {
+        labels.add(CN[cat]||cat)
+      }
+    })
+  })
+  return[...labels]
+}
+
 // 타임라인 카테고리 입력용 자동완성 후보 (업체 태그 + 업체 카테고리명 + 이미 쓰인 타임라인 카테고리)
 function tagSuggestions(){
   const s=new Set()
@@ -758,6 +784,10 @@ function rDash(){
   const conf=all.filter(v=>v.status==='확정').length
   const rev=all.filter(v=>v.status==='검토중').length
   const cand=all.filter(v=>v.status==='후보').length
+  const labelPills=labels=>labels.length?labels.map(l=>'<span class="vtag">'+l+'</span>').join(''):''
+  const confLabels=labelPills(statusLabels('확정'))
+  const revLabels=labelPills(statusLabels('검토중'))
+  const candLabels=labelPills(statusLabels('후보'))
   const spent=totalSpent()
   const tlAll=D.tl.flatMap(m=>m.tasks)
   const tlDone=tlAll.filter(t=>t.dn).length
@@ -788,9 +818,9 @@ function rDash(){
   }).join(''):''
 
   return`<div class="sg">
-    <div class="sc"><div class="sl">확정</div><div class="sv g">${conf}</div><div class="sd">업체</div></div>
-    <div class="sc"><div class="sl">검토중</div><div class="sv a">${rev}</div><div class="sd">업체</div></div>
-    <div class="sc"><div class="sl">후보</div><div class="sv">${cand}</div><div class="sd">결정 전</div></div>
+    <div class="sc"><div class="sl">확정</div><div class="sv g">${conf}</div><div style="margin-top:8px">${confLabels||'<div class="sd">아직 없어요</div>'}</div></div>
+    <div class="sc"><div class="sl">검토중</div><div class="sv a">${rev}</div><div style="margin-top:8px">${revLabels||'<div class="sd">아직 없어요</div>'}</div></div>
+    <div class="sc"><div class="sl">후보</div><div class="sv">${cand}</div><div style="margin-top:8px">${candLabels||'<div class="sd">아직 없어요</div>'}</div></div>
     <div class="sc" style="cursor:pointer" onclick="go('expense')">
       <div class="sl">지금까지 쓴 돈</div>
       <div class="sv a" style="font-size:21px">${fp(spent)}</div>
@@ -863,6 +893,7 @@ function payRow(label,amount,paid,dueDate){
 function rCard(v){
   const sel=cmpSet.has(v.id)
   const tags=(v.tags||[]).map(t=>'<span class="vtag">'+t+'</span>').join('')
+  const featureTags=(v.feature||[]).map(t=>'<span class="vtag">'+t+'</span>').join('')
   const payBlock=v.status==='확정'&&v.price
     ?'<div class="vpay">'+payRow('계약금',v.deposit,v.depositPaid,v.depositDate)+payRow('잔금',v.price-(v.deposit||0),v.balancePaid,v.balanceDate)+'</div>'
     :''
@@ -876,7 +907,8 @@ function rCard(v){
     </div>
     <div class="vp">${fp(v.price)}<span class="vdep">/ 계약금 ${fp(v.deposit)}</span></div>
     <div class="vm"><span>📍 ${v.loc}</span>${v.cap?'<span>👥 '+v.cap+'</span>':''}</div>
-    ${tags?'<div class="vtags">'+tags+'</div>':''}
+    ${tags?(cur==='etc'?'<div style="font-size:9px;color:var(--tm);margin-bottom:3px">종류</div>':'')+'<div class="vtags">'+tags+'</div>':''}
+    ${featureTags?(cur==='etc'?'<div style="font-size:9px;color:var(--tm);margin-bottom:3px;margin-top:6px">특징</div>':'')+'<div class="vtags" style="margin-top:'+(cur==='etc'?'0':'-5px')+'">'+featureTags+'</div>':''}
     ${v.note?'<div class="vnote">'+v.note+'</div>':''}
     ${v.link?'<a href="'+v.link+'" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--a);margin-top:8px;text-decoration:none">↗ 바로가기</a>':''}
     ${v.status==='확정'&&v.confirmedAt?'<div style="font-size:10px;color:var(--ok);margin-top:7px;letter-spacing:.02em">✓ 확정 '+fmtTs(v.confirmedAt)+'</div>':''}
@@ -885,7 +917,10 @@ function rCard(v){
 }
 
 function rCmpTbl(vs){
-  const rows=[['가격',v=>'<span class="cprice">'+fp(v.price)+'</span>'],['계약금',v=>fp(v.deposit)],['위치',v=>v.loc],['인원',v=>v.cap||'-'],['상태',v=>'<span class="sb s'+v.status+'">'+v.status+'</span>'],['특징',v=>(v.tags||[]).map(t=>'<span class="vtag">'+t+'</span>').join(' ')],['메모',v=>v.note||'-']]
+  const rows=[['가격',v=>'<span class="cprice">'+fp(v.price)+'</span>'],['계약금',v=>fp(v.deposit)],['위치',v=>v.loc],['인원',v=>v.cap||'-'],['상태',v=>'<span class="sb s'+v.status+'">'+v.status+'</span>'],
+    ...(cur==='etc'?[['종류',v=>(v.tags||[]).map(t=>'<span class="vtag">'+t+'</span>').join(' ')]]:[]),
+    ['특징',v=>(cur==='etc'?(v.feature||[]):(v.tags||[])).map(t=>'<span class="vtag">'+t+'</span>').join(' ')],
+    ['메모',v=>v.note||'-']]
   const ths=vs.map(v=>'<th class="'+(v.status==='확정'?'ch':'')+'">'+v.name+'</th>').join('')
   const trs=rows.map(([l,fn])=>'<tr><td>'+l+'</td>'+vs.map(v=>'<td>'+fn(v)+'</td>').join('')+'</tr>').join('')
   return'<div class="ctwrap"><table class="ctbl"><thead><tr><th></th>'+ths+'</tr></thead><tbody>'+trs+'</tbody></table></div>'
@@ -1432,7 +1467,8 @@ function openAdd(){
       <div class="fg"><label class="fl">위치</label><input class="fi" id="fl2" placeholder="강남구"/></div>
       ${addCat==='hall'?'<div class="fg"><label class="fl">수용 인원</label><input class="fi" id="fcap" placeholder="200명"/></div>':'<div></div>'}
     </div>
-    <div class="fg"><label class="fl">특징 태그 (쉼표 구분)</label><input class="fi" id="ftags" placeholder="뷔페 포함, 주차 50대"/></div>
+    <div class="fg"><label class="fl">${addCat==='etc'?'종류 (쉼표 구분)':'특징 태그 (쉼표 구분)'}</label><input class="fi" id="ftags" placeholder="${addCat==='etc'?'청첩장, 신혼여행':'뷔페 포함, 주차 50대'}"/></div>
+    ${addCat==='etc'?`<div class="fg"><label class="fl">특징 태그 (쉼표 구분)</label><input class="fi" id="ffeature" placeholder="가성비 좋음, 응대 친절"/></div>`:''}
     <div class="fg"><label class="fl">메모</label><textarea class="fi" id="fnote" rows="3" placeholder="방문 후기, 특이사항 등"></textarea></div>
     <div class="fg"><label class="fl">링크 (인스타/네이버/홈페이지)</label><input class="fi" id="flink" placeholder="https://..."/></div>
     <div class="fr">
@@ -1466,7 +1502,8 @@ function openEdit(id){
       <div class="fg"><label class="fl">위치</label><input class="fi" id="fl2" value="${v.loc||''}"/></div>
       ${addCat==='hall'?'<div class="fg"><label class="fl">수용 인원</label><input class="fi" id="fcap" value="'+(v.cap||'')+'"/></div>':'<div></div>'}
     </div>
-    <div class="fg"><label class="fl">특징 태그 (쉼표 구분)</label><input class="fi" id="ftags" value="${(v.tags||[]).join(', ')}"/></div>
+    <div class="fg"><label class="fl">${addCat==='etc'?'종류 (쉼표 구분)':'특징 태그 (쉼표 구분)'}</label><input class="fi" id="ftags" value="${(v.tags||[]).join(', ')}"/></div>
+    ${addCat==='etc'?`<div class="fg"><label class="fl">특징 태그 (쉼표 구분)</label><input class="fi" id="ffeature" value="${(v.feature||[]).join(', ')}"/></div>`:''}
     <div class="fg"><label class="fl">메모</label><textarea class="fi" id="fnote" rows="3">${v.note||''}</textarea></div>
     <div class="fg"><label class="fl">링크 (인스타/네이버/홈페이지)</label><input class="fi" id="flink" value="${v.link||''}" placeholder="https://..."/></div>
     <div class="fr">
@@ -1488,8 +1525,10 @@ function openEdit(id){
 function submitVendor(){
   const name=document.getElementById('fn').value.trim();if(!name){document.getElementById('fn').focus();return}
   const tagsRaw=document.getElementById('ftags').value
+  const featureEl=document.getElementById('ffeature')
+  const featureRaw=featureEl?featureEl.value:''
   const capEl=document.getElementById('fcap')
-  const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim(),link:document.getElementById('flink').value.trim(),date:document.getElementById('fdate')?.value||'',depositDate:document.getElementById('fdepDate')?.value||'',depositPaid:!!document.getElementById('fdepPaid')?.checked,balanceDate:document.getElementById('fbalDate')?.value||'',balancePaid:!!document.getElementById('fbalPaid')?.checked}
+  const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],feature:featureRaw?featureRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim(),link:document.getElementById('flink').value.trim(),date:document.getElementById('fdate')?.value||'',depositDate:document.getElementById('fdepDate')?.value||'',depositPaid:!!document.getElementById('fdepPaid')?.checked,balanceDate:document.getElementById('fbalDate')?.value||'',balancePaid:!!document.getElementById('fbalPaid')?.checked}
   if(editId){
     const vs=D.vendors[addCat],i=vs.findIndex(v=>v.id===editId)
     if(i>-1){

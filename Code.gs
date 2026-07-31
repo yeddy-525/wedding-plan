@@ -116,7 +116,7 @@ function writeRows(ss, sheetName, rows, fields) {
 
 // ── 업체 (카테고리별 분리 저장) ───────────────────────────────────────────
 
-const V_FIELDS = ['id','cat','name','price','deposit','loc','cap','status','tags','note','date','depositDate','depositPaid','balanceDate','balancePaid']
+const V_FIELDS = ['id','cat','name','price','deposit','loc','cap','status','tags','note','date','depositDate','depositPaid','balanceDate','balancePaid','feature']
 
 function readVendors(ss) {
   const sh = ss.getSheetByName(SH.VENDORS)
@@ -155,8 +155,9 @@ function writeVendors(ss, vendors) {
     })
   })
   if (rows.length > 0) {
-    // depositDate/balanceDate는 "2026-08-01" 같은 문자열이 시트에서
+    // date/depositDate/balanceDate는 "2026-08-01" 같은 문자열이 시트에서
     // 날짜로 자동 변환되지 않도록 텍스트 서식을 강제한다 (Monthly 시트와 동일한 이유)
+    sh.getRange(2, 11, rows.length, 1).setNumberFormat('@')
     sh.getRange(2, 12, rows.length, 1).setNumberFormat('@')
     sh.getRange(2, 14, rows.length, 1).setNumberFormat('@')
     sh.getRange(2, 1, rows.length, V_FIELDS.length).setValues(rows)
