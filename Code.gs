@@ -116,7 +116,7 @@ function writeRows(ss, sheetName, rows, fields) {
 
 // ── 업체 (카테고리별 분리 저장) ───────────────────────────────────────────
 
-const V_FIELDS = ['id','cat','name','price','deposit','loc','cap','status','tags','note','date']
+const V_FIELDS = ['id','cat','name','price','deposit','loc','cap','status','tags','note','date','depositDate','depositPaid','balanceDate','balancePaid']
 
 function readVendors(ss) {
   const sh = ss.getSheetByName(SH.VENDORS)
@@ -127,7 +127,9 @@ function readVendors(ss) {
       const v = {}
       V_FIELDS.forEach((f, i) => {
         let val = r[i]
-        if (typeof val === 'string' && val.startsWith('[')) {
+        if (f === 'depositPaid' || f === 'balancePaid') {
+          val = val === true || val === 'true'
+        } else if (typeof val === 'string' && val.startsWith('[')) {
           try { val = JSON.parse(val) } catch(_) {}
         }
         v[f] = val
@@ -152,8 +154,13 @@ function writeVendors(ss, vendors) {
       }))
     })
   })
-  if (rows.length > 0)
+  if (rows.length > 0) {
+    // depositDate/balanceDate는 "2026-08-01" 같은 문자열이 시트에서
+    // 날짜로 자동 변환되지 않도록 텍스트 서식을 강제한다 (Monthly 시트와 동일한 이유)
+    sh.getRange(2, 12, rows.length, 1).setNumberFormat('@')
+    sh.getRange(2, 14, rows.length, 1).setNumberFormat('@')
     sh.getRange(2, 1, rows.length, V_FIELDS.length).setValues(rows)
+  }
 }
 
 // ── 타임라인 (월 × 태스크 펼쳐서 저장) ──────────────────────────────────

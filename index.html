@@ -124,6 +124,11 @@ html,body{height:100%}
 .vtags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
 .vtag{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--s2);color:var(--tm)}
 .vnote{font-size:11px;color:var(--tm);line-height:1.5;border-top:1px solid var(--b);padding-top:9px}
+.vpay{font-size:11px;border-top:1px solid var(--b);padding-top:9px;margin-top:9px;display:flex;flex-direction:column;gap:5px}
+.vpay-row{display:flex;justify-content:space-between;align-items:center}
+.vpay-ok{color:var(--ok);font-weight:600;font-size:10px}
+.vpay-due{color:var(--tm);font-weight:600;font-size:10px}
+.vpay-due.late{color:var(--no)}
 
 /* COMPARE FLOAT */
 .cf{position:fixed;bottom:0;left:216px;right:0;background:var(--s);border-top:1px solid rgba(74,143,224,.25);padding:11px 24px;display:flex;align-items:center;gap:12px;transform:translateY(100%);transition:transform .2s;z-index:50;box-shadow:0 -4px 12px rgba(0,0,0,.06)}
@@ -362,6 +367,12 @@ function fp(n){
   if(n>=10000000)return(Math.round(n/100000)/100)+'천만원'
   if(n>=10000){const m=n/10000;return(m%1===0?m:Math.round(m*10)/10)+'만원'}
   return n.toLocaleString()+'원'
+}
+function dueDayLabel(ds){
+  const diff=Math.round((new Date(ds)-TODAY)/(1000*60*60*24))
+  if(diff>0) return'D-'+diff
+  if(diff===0) return'D-DAY'
+  return'기한 지남'
 }
 function fmtTs(ts){
   const d=new Date(ts),p=n=>String(n).padStart(2,'0')
@@ -823,9 +834,19 @@ function rVendors(cat){
   </div>${body}`
 }
 
+function payRow(label,amount,paid,dueDate){
+  const status=paid
+    ?'<span class="vpay-ok">✓ 완납</span>'
+    :dueDate?'<span class="vpay-due'+(dueDayLabel(dueDate)==='기한 지남'?' late':'')+'">'+dueDayLabel(dueDate)+'</span>':''
+  return'<div class="vpay-row"><span>'+label+' '+fp(amount)+'</span>'+status+'</div>'
+}
+
 function rCard(v){
   const sel=cmpSet.has(v.id)
   const tags=(v.tags||[]).map(t=>'<span class="vtag">'+t+'</span>').join('')
+  const payBlock=v.status==='확정'&&v.price
+    ?'<div class="vpay">'+payRow('계약금',v.deposit,v.depositPaid,v.depositDate)+payRow('잔금',v.price-(v.deposit||0),v.balancePaid,v.balanceDate)+'</div>'
+    :''
   return`<div class="vc ${sel?'sel':''}" onclick="${cmpMode?'toggleSel('+v.id+')':''}">
     <div class="vch">
       <div class="vn">${v.name}</div>
@@ -840,6 +861,7 @@ function rCard(v){
     ${v.note?'<div class="vnote">'+v.note+'</div>':''}
     ${v.link?'<a href="'+v.link+'" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--a);margin-top:8px;text-decoration:none">↗ 바로가기</a>':''}
     ${v.status==='확정'&&v.confirmedAt?'<div style="font-size:10px;color:var(--ok);margin-top:7px;letter-spacing:.02em">✓ 확정 '+fmtTs(v.confirmedAt)+'</div>':''}
+    ${payBlock}
   </div>`
 }
 
@@ -1370,6 +1392,14 @@ function openAdd(){
       <div class="fg"><label class="fl">상태</label><select class="fsel" id="fst"><option>후보</option><option>검토중</option><option>확정</option><option>탈락</option></select></div>
       <div class="fg"><label class="fl">예약/촬영일</label><input class="fi" id="fdate" type="date"/></div>
     </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">계약금 납부일</label><input class="fi" id="fdepDate" type="date"/></div>
+      <div class="fg"><label class="fl">계약금 완납</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:9px 0"><input type="checkbox" id="fdepPaid"/> 완납했어요</label></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">잔금 납부 예정일</label><input class="fi" id="fbalDate" type="date"/></div>
+      <div class="fg"><label class="fl">잔금 완납</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:9px 0"><input type="checkbox" id="fbalPaid"/> 완납했어요</label></div>
+    </div>
     <div class="ma"><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitVendor()">추가하기</button></div>`
   document.getElementById('modal').style.display='flex'
   setTimeout(()=>document.getElementById('fn').focus(),50)
@@ -1396,6 +1426,14 @@ function openEdit(id){
       <div class="fg"><label class="fl">상태</label><select class="fsel" id="fst"><option ${v.status==='후보'?'selected':''}>후보</option><option ${v.status==='검토중'?'selected':''}>검토중</option><option ${v.status==='확정'?'selected':''}>확정</option><option ${v.status==='탈락'?'selected':''}>탈락</option></select></div>
       <div class="fg"><label class="fl">예약/촬영일</label><input class="fi" id="fdate" type="date" value="${v.date||''}"/></div>
     </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">계약금 납부일</label><input class="fi" id="fdepDate" type="date" value="${v.depositDate||''}"/></div>
+      <div class="fg"><label class="fl">계약금 완납</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:9px 0"><input type="checkbox" id="fdepPaid" ${v.depositPaid?'checked':''}/> 완납했어요</label></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">잔금 납부 예정일</label><input class="fi" id="fbalDate" type="date" value="${v.balanceDate||''}"/></div>
+      <div class="fg"><label class="fl">잔금 완납</label><label style="display:flex;align-items:center;gap:6px;font-size:13px;padding:9px 0"><input type="checkbox" id="fbalPaid" ${v.balancePaid?'checked':''}/> 완납했어요</label></div>
+    </div>
     <div class="ma"><button class="btn danger" onclick="deleteVendor(${id})">삭제</button><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitVendor()">저장</button></div>`
   document.getElementById('modal').style.display='flex'
 }
@@ -1404,7 +1442,7 @@ function submitVendor(){
   const name=document.getElementById('fn').value.trim();if(!name){document.getElementById('fn').focus();return}
   const tagsRaw=document.getElementById('ftags').value
   const capEl=document.getElementById('fcap')
-  const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim(),link:document.getElementById('flink').value.trim(),date:document.getElementById('fdate')?.value||''}
+  const data={name,price:parseInt(document.getElementById('fp2').value)||0,deposit:parseInt(document.getElementById('fd').value)||0,loc:document.getElementById('fl2').value.trim()||'-',cap:capEl?capEl.value.trim()||null:null,status:document.getElementById('fst').value,tags:tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[],note:document.getElementById('fnote').value.trim(),link:document.getElementById('flink').value.trim(),date:document.getElementById('fdate')?.value||'',depositDate:document.getElementById('fdepDate')?.value||'',depositPaid:!!document.getElementById('fdepPaid')?.checked,balanceDate:document.getElementById('fbalDate')?.value||'',balancePaid:!!document.getElementById('fbalPaid')?.checked}
   if(editId){
     const vs=D.vendors[addCat],i=vs.findIndex(v=>v.id===editId)
     if(i>-1){
