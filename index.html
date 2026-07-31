@@ -687,6 +687,18 @@ function linkedVendorLabel(cat){
   return matches.length?'→ '+matches.map(v=>v.name).join(', '):''
 }
 
+// 타임라인 카테고리 입력용 자동완성 후보 (업체 태그 + 업체 카테고리명 + 이미 쓰인 타임라인 카테고리)
+function tagSuggestions(){
+  const s=new Set()
+  Object.values(D.vendors).flat().forEach(v=>(v.tags||[]).forEach(t=>s.add(t)))
+  Object.values(CN).forEach(c=>s.add(c))
+  D.tl.forEach(m=>m.tasks.forEach(t=>{if(t.cat)s.add(t.cat)}))
+  return[...s]
+}
+function tagDatalist(){
+  return'<datalist id="tlt-cat-list">'+tagSuggestions().map(s=>'<option value="'+s+'">').join('')+'</datalist>'
+}
+
 // 현재 타임라인 단계 계산
 function currentTlPhase(){
   const wd=new Date(D.settings.weddingDate)
@@ -905,11 +917,12 @@ function rTl(){
         ${tasks}
         <div class="tl-add-row">
           <input class="tl-add-input" id="tl-input-${m.id}" placeholder="할 일 추가..." onkeydown="if(event.key==='Enter')addTlTask(${m.id})"/>
+          <input class="tl-add-input" id="tl-cat-input-${m.id}" placeholder="카테고리 * (예: 전체)" list="tlt-cat-list" style="max-width:150px" onkeydown="if(event.key==='Enter')addTlTask(${m.id})"/>
           <button class="btn sm" onclick="addTlTask(${m.id})">추가</button>
         </div>
       </div>
     </div>`
-  }).join('')
+  }).join('')+tagDatalist()
 }
 
 const EXP_CATS=['웨딩홀','스튜디오','메이크업','드레스','청첩장','스냅촬영','신혼여행','혼수','예물','예단','기타']
@@ -1366,9 +1379,11 @@ function deleteTlTask(id){for(const m of D.tl){const i=m.tasks.findIndex(t=>t.id
 
 function addTlTask(monthId){
   const el=document.getElementById('tl-input-'+monthId);if(!el)return
+  const catEl=document.getElementById('tl-cat-input-'+monthId)
   const text=el.value.trim();if(!text)return
+  const cat=catEl?catEl.value.trim():'';if(!cat){catEl?.focus();return}
   const m=D.tl.find(m=>m.id===monthId);if(!m)return
-  m.tasks.push({id:Date.now(),text,cat:'기타',dn:false})
+  m.tasks.push({id:Date.now(),text,cat,dn:false})
   sv();render()
 }
 
@@ -1381,7 +1396,7 @@ function editTlTask(id){
   const t=findTlTask(id);if(!t)return
   document.getElementById('mbox').innerHTML=`<div class="mtit">할 일 수정</div>
     <div class="fg"><label class="fl">내용 *</label><input class="fi" id="tlt-text" value="${t.text}"/></div>
-    <div class="fg"><label class="fl">카테고리</label><input class="fi" id="tlt-cat" value="${t.cat||''}"/></div>
+    <div class="fg"><label class="fl">카테고리 *</label><input class="fi" id="tlt-cat" value="${t.cat||''}" list="tlt-cat-list" placeholder="특정 업체와 무관하면 전체"/></div>
     <div class="ma"><button class="btn danger" onclick="deleteTlTask(${id});closeModal()">삭제</button><button class="btn" onclick="closeModal()">취소</button><button class="btn p" onclick="submitTlTaskEdit(${id})">저장</button></div>`
   document.getElementById('modal').style.display='flex'
 }
@@ -1389,8 +1404,10 @@ function editTlTask(id){
 function submitTlTaskEdit(id){
   const t=findTlTask(id);if(!t)return
   const text=document.getElementById('tlt-text').value.trim();if(!text)return
+  const catEl=document.getElementById('tlt-cat')
+  const cat=catEl.value.trim();if(!cat){catEl.focus();return}
   t.text=text
-  t.cat=document.getElementById('tlt-cat').value.trim()||'기타'
+  t.cat=cat
   sv();closeModal();render()
 }
 
